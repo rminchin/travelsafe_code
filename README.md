@@ -2,15 +2,9 @@
 
 attempt 1
 
-## Getting Started
+## Travel Safe
 
-This project is a starting point for a Flutter application.
+Travel Safe is a mobile app created by Rhys Minchin. I am studying a Computer Science BSc at Newcastle University and this
+app will be the basis of my final year dissertation.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The app was written using the Flutter framework.
