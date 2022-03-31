@@ -1,115 +1,538 @@
 import 'package:flutter/material.dart';
+import 'package:travelsafe_v1/helpers/user.dart';
+import 'package:travelsafe_v1/helpers/database_helper.dart';
+import 'package:crypto/crypto.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'homepage.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() => runApp(const TravelSafe());
+
+class TravelSafe extends StatefulWidget {
+  const TravelSafe({Key? key}) : super(key: key);
+
+  @override
+  _TravelSafeState createState() => _TravelSafeState();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  // This widget is the root of your application.
+class _TravelSafeState extends State<TravelSafe> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      title: "LoginAndSignUp",
+      debugShowCheckedModeBanner: false,
+      home: LoginSignUp(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class LoginSignUp extends StatefulWidget {
+  const LoginSignUp({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _LoginSignUpState createState() => _LoginSignUpState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStateMixin {
+  final TextEditingController _controllerUsername = TextEditingController();
+  final TextEditingController _controllerUsernameLogin =
+      TextEditingController();
+  String _username = '';
 
-  void _incrementCounter() {
+  final TextEditingController _controllerPassword = TextEditingController();
+  final TextEditingController _controllerPasswordLogin =
+      TextEditingController();
+  String _password = '';
+
+  final TextEditingController _controllerNickname = TextEditingController();
+  String _nickname = '';
+
+  final FocusNode _focusLogin = FocusNode();
+  final FocusNode _focusSignup = FocusNode();
+
+  late final TabController _controller = TabController(length: 2, vsync: this);
+
+  bool _value = false;
+
+  List<Map<String, dynamic>> _users = [];
+  List<Map<String, dynamic>> _user = [];
+
+  SharedPreferences? _preferences; //using shared preferences for 'staying logged in'
+
+  void _refreshUsers() async {
+    final data = await DatabaseHelper.getUsers();
+    print(data.length);
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _users = data;
     });
   }
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_handleTabSelection);
+    initializePreference().whenComplete((){
+      setState(() {});
+    });
+    _refreshUsers();
+  }
+
+  Future<void> initializePreference() async{
+    _preferences = await SharedPreferences.getInstance();
+    //await _preferences?.remove('username');
+    var user = _preferences?.getString('username');
+    if(user != null){
+      Navigator.pushAndRemoveUntil<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => HomePage(username: user)),
+        ModalRoute.withName('/'),
+      );
+    } else{
+      print("no shared preferences stored");
+    }
+  }
+
+  void _handleTabSelection(){
+    if (_controller.indexIsChanging) {
+      switch (_controller.index) {
+        case 0:
+          _focusLogin.requestFocus();
+          _controllerUsername.clear();
+          _controllerPassword.clear();
+          _controllerNickname.clear();
+          setState(() {
+            _username = _controllerUsernameLogin.text;
+            _password = _controllerPasswordLogin.text;
+            _nickname = _controllerNickname.text;
+            _value = false;
+          });
+          break;
+        case 1:
+          _focusSignup.requestFocus();
+          _controllerUsernameLogin.clear();
+          _controllerPasswordLogin.clear();
+          setState(() {
+            _username = _controllerUsername.text;
+            _password = _controllerPassword.text;
+            _nickname = _controllerNickname.text;
+            _value = false;
+          });
+          break;
+      }
+    }
+  }
+
+  bool _showPasswordLogin = false;
+  bool _showPasswordSignup = false;
+  void _toggleVisibilitySignup() {
+    setState(() {
+      _showPasswordSignup = !_showPasswordSignup;
+    });
+  }
+
+  void _toggleVisibilityLogin() {
+    setState(() {
+      _showPasswordLogin = !_showPasswordLogin;
+    });
+  }
+
+  void _submitSignup() async {
+    if(isValidSignup("u", _controllerUsername.text) && isValidSignup("p", _controllerPassword.text) && isValidSignup("n", _controllerNickname.text)){
+      var bytes = utf8.encode(_controllerPassword.text);
+      var digest = sha256.convert(bytes); //hash password
+
+      var user = User(_controllerUsername.text, digest.toString(),
+          _controllerNickname.text, _value ? 1 : 0);
+      if(_value == true){
+        print("here");
+        _preferences = await SharedPreferences.getInstance();
+        _preferences?.setString("username", _controllerUsername.text);
+      }
+      await DatabaseHelper.createUser(user);
+      try{
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Successfully created an account!'),
+        ));
+        _refreshUsers();
+        Navigator.pushAndRemoveUntil<void>(
+          context,
+          MaterialPageRoute<void>(
+              builder: (BuildContext context) => HomePage(username: _controllerUsername.text)),
+          ModalRoute.withName('/'),
+        );
+      } catch(e){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Account creation failed, please try again'),
+        ));
+      }
+    } else{
+      _controllerUsername.clear();
+      _controllerPassword.clear();
+      _controllerNickname.clear();
+      _focusSignup.requestFocus();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Invalid signup credentials, please try again'),
+      ));
+      setState(() {
+        _username = _controllerUsername.text;
+        _password = _controllerPassword.text;
+        _nickname = _controllerNickname.text;
+      });
+    }
+  }
+
+  void _submitLogin() async {
+    var bytes = utf8.encode(_controllerPasswordLogin.text);
+    var digest = sha256.convert(bytes); //hash password input
+
+    _user =
+        await DatabaseHelper.getUserByUsername(_controllerUsernameLogin.text);
+    try{
+      if (_user[0]['password'] == digest.toString()) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Successfully logged in!'),
+        ));
+        _refreshUsers();
+        Navigator.pushAndRemoveUntil<void>(
+          context,
+          MaterialPageRoute<void>(
+              builder: (BuildContext context) => HomePage(username: _controllerUsernameLogin.text)),
+          ModalRoute.withName('/'),
+        );
+      } else {
+        _controllerUsernameLogin.clear();
+        _controllerPasswordLogin.clear();
+        _focusLogin.requestFocus();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Invalid login credentials, please try again'),
+        ));
+      }
+    } catch (e){ //in case SQL query fails somehow
+      _controllerUsernameLogin.clear();
+      _controllerPasswordLogin.clear();
+      _focusLogin.requestFocus();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Invalid login credentials, please try again'),
+      ));
+      setState(() {
+        _username = _controllerUsernameLogin.text;
+        _password = _controllerPasswordLogin.text;
+      });
+    }
+  }
+
+  bool isValidSignup(String mode, String text) {
+    if (mode == "u") {
+      return (text.length >= 6 && text.length <= 20);
+    } else if (mode == "p") {
+      return (text.length >= 6 &&
+          text.length <= 20 &&
+          text.contains(RegExp(r'[0-9]')) &&
+          text.contains(RegExp(r'[!@#\$&*~]')));
+    } else {
+      return (text.length >= 3 && text.length <= 20);
+    }
+  }
+
+  bool isValidLogin(String mode, String text) {
+    return text.isNotEmpty;
+  }
+
+  bool usernameExists(String username) {
+    var existingUser;
+    try {
+      existingUser = _users.firstWhere(
+          (element) => element['username'] == _controllerUsername.text);
+    } on StateError {
+      existingUser = -1;
+    }
+
+    if (existingUser == -1) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  String returnMessageSignup(String mode, String text) {
+    if (mode == "u_mess") {
+      if (text.isEmpty) {
+        return 'Username can\'t be empty';
+      } else if (text.length < 6) {
+        return 'Username is too short';
+      } else if (text.length > 20) {
+        return 'Username is too long';
+      } else if (usernameExists(text)) {
+        return 'This username is already taken';
+      } else {
+        return 'check';
+      }
+    } else if (mode == "u_pass") {
+      if (text.isEmpty) {
+        return 'Password can\'t be empty';
+      } else if (text.length < 6) {
+        return 'Password is too short';
+      } else if (text.length > 20) {
+        return 'Password is too long';
+      } else if (!text.contains(RegExp(r'[0-9]'))) {
+        return 'Password must contain at least one number';
+      } else if (!text.contains(RegExp(r'[!@#\$&*~]'))) {
+        return 'Password must contain at least one special character';
+      } else {
+        return 'check';
+      }
+    } else {
+      if (text.isEmpty) {
+        return 'Nickname can\'t be empty';
+      } else if (text.length < 3) {
+        return 'Nickname is too short';
+      } else if (text.length > 20) {
+        return 'Nickname is too long';
+      } else {
+        return 'check';
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controllerUsername.dispose();
+    _controllerPassword.dispose();
+    _controllerNickname.dispose();
+    _controllerUsernameLogin.dispose();
+    _controllerPasswordLogin.dispose();
+    _focusLogin.dispose();
+    _focusSignup.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+          appBar: AppBar(
+            centerTitle: true,
+            title: const Text("TravelSafe"),
+            toolbarHeight: 40,
+            bottom: TabBar(
+              controller: _controller,
+                tabs: const [
+              Tab(
+                  icon: Icon(Icons.login),
+                  child: Text("Click here to log in"),
+                  height: 55),
+              Tab(
+                  icon: Icon(Icons.format_list_bulleted),
+                  child: Text("Click here to sign up"),
+                  height: 55)
+            ]),
+          ),
+          body: TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
+              controller: _controller,
+              children: [
+                Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 30),
+                      const Text("Enter your details here to log in:",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                          )),
+                      const SizedBox(height: 30),
+                      TextFormField(
+                          autofocus: true,
+                          focusNode: _focusLogin,
+                          controller: _controllerUsernameLogin,
+                          decoration: const InputDecoration(
+                              labelText: 'Enter your username'),
+                          autovalidateMode: AutovalidateMode.always,
+                          onChanged: (value) {
+                            setState(() {
+                              _username = _controllerUsernameLogin.text;
+                            });
+                          }),
+                      const SizedBox(height: 30),
+                      TextFormField(
+                        obscureText: !_showPasswordLogin,
+                        controller: _controllerPasswordLogin,
+                        decoration: InputDecoration(
+                            labelText: 'Enter your password',
+                            suffixIcon: (GestureDetector(
+                                onTap: () {
+                                  _toggleVisibilityLogin();
+                                },
+                                child: Icon(_showPasswordLogin
+                                    ? Icons.visibility
+                                    : Icons.visibility_off)))),
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        onChanged: (value) {
+                          setState(() {
+                            _password = _controllerPasswordLogin.text;
+                          });
+                        },
+                      ),
+                      const SizedBox(
+                        height: 50,
+                      ),
+                      ElevatedButton(
+                        // only enable the button if all inputs are valid
+                        onPressed: isValidLogin("u", _username) &&
+                                isValidLogin("p", _password)
+                            ? _submitLogin
+                            : null,
+                        child: Text(
+                          'Log In',
+                          style: Theme.of(context).textTheme.headline6,
+                        ),
+                        //changes colour of button to further highlight valid/invalid input
+                        style: ButtonStyle(
+                          backgroundColor: isValidLogin("u", _username) &&
+                                  isValidLogin("p", _password)
+                              ? MaterialStateProperty.all<Color>(
+                                  Colors.blueAccent)
+                              : MaterialStateProperty.all<Color>(Colors.grey),
+                        ),
+                      ),
+                    ]),
+                //////////////////////////////////////////////////////////////////////////////////////////////////////
+                Scrollbar(
+                  thickness: 10,
+                  radius: const Radius.elliptical(5, 5),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(
+                          height: 30,
+                        ),
+                        const Text(
+                            "Enter your details here to sign up for a new account:",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            )),
+                        const SizedBox(
+                          height: 30,
+                        ),
+                        TextFormField(
+                          controller: _controllerUsername,
+                          focusNode: _focusSignup,
+                          decoration: const InputDecoration(
+                            labelText: 'Enter your desired username',
+                          ),
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          validator: (text) {
+                            String text2 = returnMessageSignup('u_mess', text!);
+                            if (text2 != 'check') {
+                              return text2;
+                            } else {
+                              return null;
+                            }
+                          },
+                          onChanged: (value) {
+                            setState(() {
+                              _username = _controllerUsername.text;
+                            });
+                          },
+                        ),
+                        const SizedBox(
+                          height: 30,
+                        ),
+                        TextFormField(
+                          obscureText: !_showPasswordSignup,
+                          controller: _controllerPassword,
+                          decoration: InputDecoration(
+                              labelText: 'Enter your desired password',
+                              suffixIcon: (GestureDetector(
+                                  onTap: () {
+                                    _toggleVisibilitySignup();
+                                  },
+                                  child: Icon(_showPasswordSignup
+                                      ? Icons.visibility
+                                      : Icons.visibility_off)))),
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          validator: (text) {
+                            String text2 = returnMessageSignup('u_pass', text!);
+                            if (text2 != 'check') {
+                              return text2;
+                            } else {
+                              return null;
+                            }
+                          },
+                          onChanged: (value) {
+                            setState(() {
+                              _password = _controllerPassword.text;
+                            });
+                          },
+                        ),
+                        const SizedBox(
+                          height: 30,
+                        ),
+                        TextFormField(
+                          controller: _controllerNickname,
+                          decoration: const InputDecoration(
+                            labelText: 'Enter your desired nickname',
+                          ),
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          validator: (text) {
+                            String text2 = returnMessageSignup('u_nick', text!);
+                            if (text2 != 'check') {
+                              return text2;
+                            } else {
+                              return null;
+                            }
+                          },
+                          onChanged: (value) {
+                            setState(() {
+                              _nickname = _controllerNickname.text;
+                            });
+                          },
+                        ),
+                        const SizedBox(
+                          height: 30,
+                        ),
+                        ListTile(
+                          title: const Text("Remain logged in:"),
+                          trailing: Checkbox(
+                            value: _value,
+                            onChanged: (value) {
+                              setState(() {
+                                _value = value!;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 50),
+                        ElevatedButton(
+                          // only enable the button if all inputs are valid
+                          onPressed: isValidSignup("u", _username) &&
+                                  isValidSignup("p", _password) &&
+                                  isValidSignup("n", _nickname)
+                              ? _submitSignup
+                              : null,
+                          child: Text(
+                            'Sign Up',
+                            style: Theme.of(context).textTheme.headline6,
+                          ),
+                          //changes colour of button to further highlight valid/invalid input
+                          style: ButtonStyle(
+                            backgroundColor: isValidSignup("u", _username) &&
+                                    isValidSignup("p", _password) &&
+                                    isValidSignup("n", _nickname)
+                                ? MaterialStateProperty.all<Color>(
+                                    Colors.blueAccent)
+                                : MaterialStateProperty.all<Color>(Colors.grey),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ])),
     );
   }
 }
