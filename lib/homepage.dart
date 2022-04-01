@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:travelsafe_v1/helpers/user.dart';
 
 class HomePage extends StatefulWidget {
-  final String username;
+  final User user;
   const HomePage(
-      {Key? key, required this.username})
+      {Key? key, required this.user})
       : super(key: key);
 
   @override
@@ -22,7 +23,7 @@ class HomePageState extends State<HomePage> {
           ),
         body: Column(
           children: [
-            Text('Logged in as ${widget.username}')
+            Text('Logged in as ${widget.user.nickname}')
           ]
         )
       ),

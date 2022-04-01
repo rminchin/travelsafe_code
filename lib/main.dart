@@ -80,16 +80,21 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
   Future<void> initializePreference() async{
     _preferences = await SharedPreferences.getInstance();
     //await _preferences?.remove('username');
-    var user = _preferences?.getString('username');
-    if(user != null){
+    var user_exists = _preferences?.getString('username');
+    if(user_exists != null){
+      _user =
+      await DatabaseHelper.getUserByUsername(user_exists);
+      String username = _user[0]['username'];
+      String password = _user[0]['password'];
+      String nickname = _user[0]['nickname'];
+      int auto = _user[0]['autoLogin'];
+      User userLogin = User(username, password, nickname, auto);
       Navigator.pushAndRemoveUntil<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => HomePage(username: user)),
+            builder: (BuildContext context) => HomePage(user: userLogin)),
         ModalRoute.withName('/'),
       );
-    } else{
-      print("no shared preferences stored");
     }
   }
 
@@ -145,7 +150,6 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
       var user = User(_controllerUsername.text, digest.toString(),
           _controllerNickname.text, _value ? 1 : 0);
       if(_value == true){
-        print("here");
         _preferences = await SharedPreferences.getInstance();
         _preferences?.setString("username", _controllerUsername.text);
       }
@@ -155,10 +159,15 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
           content: Text('Successfully created an account!'),
         ));
         _refreshUsers();
+        String username = _controllerUsername.text;
+        String password = _controllerPassword.text;
+        String nickname = _controllerNickname.text;
+        int auto = _value ? 1 : 0;
+        User userLogin = User(username, password, nickname, auto);
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(username: _controllerUsername.text)),
+              builder: (BuildContext context) => HomePage(user: userLogin)),
           ModalRoute.withName('/'),
         );
       } catch(e){
@@ -194,10 +203,15 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
           content: Text('Successfully logged in!'),
         ));
         _refreshUsers();
+        String username = _user[0]['username'];
+        String password = _user[0]['password'];
+        String nickname = _user[0]['nickname'];
+        int auto = _user[0]['autoLogin'];
+        User userLogin = User(username, password, nickname, auto);
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(username: _controllerUsernameLogin.text)),
+              builder: (BuildContext context) => HomePage(user: userLogin)),
           ModalRoute.withName('/'),
         );
       } else {
@@ -209,6 +223,7 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
         ));
       }
     } catch (e){ //in case SQL query fails somehow
+      print(e);
       _controllerUsernameLogin.clear();
       _controllerPasswordLogin.clear();
       _focusLogin.requestFocus();
@@ -496,7 +511,7 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
                           height: 30,
                         ),
                         ListTile(
-                          title: const Text("Remain logged in:"),
+                          title: const Text("Remain logged in on this device:"),
                           trailing: Checkbox(
                             value: _value,
                             onChanged: (value) {

@@ -28,7 +28,7 @@ class DatabaseHelper {
   static Future<int> createUser(User user) async {
     final db = await DatabaseHelper.db();
 
-    final data = {'username': user.username, 'password': user.password, 'nickname': user.nickname, 'autoLogin': user.keepLoggedIn};
+    final data = {'username': user.username, 'password': user.password, 'nickname': user.nickname, 'autoLogin': user.autoLogin};
     final id = await db.insert('users', data,
         conflictAlgorithm: sql.ConflictAlgorithm.rollback);
     return id;
@@ -56,14 +56,14 @@ class DatabaseHelper {
 
   // Update user details
   static Future<int> updateUser(
-      int id, String username, String password, String nickname, bool keepLoggedIn) async {
+      int id, String username, String password, String nickname, bool autoLogin) async {
     final db = await DatabaseHelper.db();
 
     final data = {
       'username': username,
       'password': password,
       'nickname': nickname,
-      'autoLogin': keepLoggedIn ? 1 : 0,
+      'autoLogin': autoLogin ? 1 : 0,
     };
 
     final result =
