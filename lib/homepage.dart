@@ -118,7 +118,7 @@ class HomePageState extends State<HomePage> {
                   const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: () =>
-                    _preferences != null
+                    _preferences?.getString('username') != null
                         ? _submitLogoutAlert(context)
                         : _submitLogout(''),
                     child: Text(
