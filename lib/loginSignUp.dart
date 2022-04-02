@@ -44,6 +44,7 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
   void _refreshUsers() async {
     final data = await DatabaseHelper.getUsers();
     print(data.length);
+    print(data);
     setState(() {
       _users = data;
     });
@@ -53,7 +54,14 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
   void initState() {
     super.initState();
     _controller.addListener(_handleTabSelection);
+    initializePreference().whenComplete((){
+      setState(() {});
+    });
     _refreshUsers();
+  }
+
+  Future<void> initializePreference() async {
+    _preferences = await SharedPreferences.getInstance();
   }
 
   void _handleTabSelection(){
@@ -181,7 +189,6 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
         ));
       }
     } catch (e){ //in case SQL query fails somehow
-      print(e);
       _controllerUsernameLogin.clear();
       _controllerPasswordLogin.clear();
       _focusLogin.requestFocus();
@@ -463,7 +470,7 @@ class _LoginSignUpState extends State<LoginSignUp> with SingleTickerProviderStat
                           height: 30,
                         ),
                         ListTile(
-                          title: const Text("Remain logged in on this device:"),
+                          title: const Text("Automatically log in each time you use the app:"),
                           trailing: Checkbox(
                             value: _value,
                             onChanged: (value) {

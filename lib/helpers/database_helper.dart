@@ -4,7 +4,9 @@ import 'user.dart';
 
 class DatabaseHelper {
   static Future<void> createTables(sql.Database database) async {
-    await database.execute("""CREATE TABLE IF NOT EXISTS users(
+    await database.execute(
+        """CREATE TABLE IF NOT EXISTS users(
+        
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         username TEXT,
         password TEXT,
@@ -30,7 +32,7 @@ class DatabaseHelper {
 
     final data = {'username': user.username, 'password': user.password, 'nickname': user.nickname, 'autoLogin': user.autoLogin};
     final id = await db.insert('users', data,
-        conflictAlgorithm: sql.ConflictAlgorithm.rollback);
+        conflictAlgorithm: sql.ConflictAlgorithm.replace);
     return id;
   }
 
@@ -55,8 +57,7 @@ class DatabaseHelper {
   }
 
   // Update user details
-  static Future<int> updateUser(
-      int id, String username, String password, String nickname, bool autoLogin) async {
+  static Future<int> updateUser(String username, String password, String nickname, bool autoLogin) async {
     final db = await DatabaseHelper.db();
 
     final data = {
@@ -67,7 +68,7 @@ class DatabaseHelper {
     };
 
     final result =
-    await db.update('users', data, where: "id = ?", whereArgs: [id]);
+    await db.update('users', data, where: "username = ?", whereArgs: [username]);
     return result;
   }
 

@@ -114,7 +114,7 @@ class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
             ElevatedButton(
               onPressed: _submitLogin,
               child: Text(
-                'Continue to Log In',
+                'Log In',
                 style: Theme.of(context).textTheme.headline6,
               ),
             ),
