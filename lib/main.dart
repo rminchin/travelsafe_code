@@ -10,7 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() => runApp(const TravelSafe());
 
 class TravelSafe extends StatefulWidget {
-  const TravelSafe({Key? key}) : super(key: key);
+  const TravelSafe(
+      {Key? key}) : super(key: key);
 
   @override
   _TravelSafeState createState() => _TravelSafeState();
@@ -22,13 +23,16 @@ class _TravelSafeState extends State<TravelSafe> {
     return const MaterialApp(
       title: "EmergencyOrLogin",
       debugShowCheckedModeBanner: false,
-      home: EmergencyOrLogin(),
+      home: EmergencyOrLogin(loggedOut: 'n'),
     );
   }
 }
 
 class EmergencyOrLogin extends StatefulWidget {
-  const EmergencyOrLogin({Key? key}) : super(key: key);
+  final String loggedOut;
+  const EmergencyOrLogin(
+      {Key? key, required this.loggedOut})
+      : super(key: key);
 
   @override
   _EmergencyOrLoginState createState() => _EmergencyOrLoginState();
@@ -50,7 +54,7 @@ class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
     _preferences = await SharedPreferences.getInstance();
     //await _preferences?.remove('username');
     var user_exists = _preferences?.getString('username');
-    if(user_exists != null){
+    if(user_exists != null && widget.loggedOut == 'n'){
       _user =
       await DatabaseHelper.getUserByUsername(user_exists);
       String username = _user[0]['username'];
@@ -89,6 +93,7 @@ class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         centerTitle: true,
         title: const Text("TravelSafe"),
         toolbarHeight: 40,
