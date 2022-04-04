@@ -16,6 +16,7 @@ class EmergencyState extends State<Emergency> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          centerTitle: true,
             title: const Text("Emergency")
         ),
         body: Center(

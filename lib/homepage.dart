@@ -79,7 +79,8 @@ class HomePageState extends State<HomePage>
         child: Scaffold(
           extendBody: true,
           appBar: AppBar(
-              automaticallyImplyLeading: false, title: const Text("TravelSafe")),
+              automaticallyImplyLeading: false, centerTitle: true
+              ,title: const Text("TravelSafe")),
           body: widget2,
           bottomNavigationBar: BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
