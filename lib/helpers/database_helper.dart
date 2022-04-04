@@ -17,13 +17,13 @@ class DatabaseHelper {
 
   static Future<Map<String, dynamic>> getUserByUsernameFirebase(String username) async {
     var collection = FirebaseFirestore.instance.collection('users');
-    var querySnapshot = await collection
-        .where('username', isEqualTo: username)
-        .get();
+    var querySnapshot = await collection.get();
 
     for (var snapshot in querySnapshot.docs) {
       Map<String, dynamic> data = snapshot.data();
-      return data;
+      if(data['username'] == username){
+        return data;
+      }
     }
 
     throw const FormatException();
@@ -69,8 +69,9 @@ class DatabaseHelper {
 
   static Future<void> deleteUserFirebase(String username) async {
     final collection = FirebaseFirestore.instance.collection('users');
+    String id = await getIDFirebase(username);
     collection
-        .doc('username')
+        .doc(id)
         .delete()
         .then((_) => print('User Deleted'))
         .catchError((error) => print('Delete failed: $error'));

@@ -60,7 +60,7 @@ class SettingsState extends State<Settings> {
                 Text('Settings - logged in as ${widget.user.nickname}'),
                 const SizedBox(height: 30),
                 ListTile(
-                  title: const Text("Auto log in feature:"),
+                  title: const Text("Automatically log in on this device:"),
                   trailing: Checkbox(
                     value: _value,
                     onChanged: (value) {

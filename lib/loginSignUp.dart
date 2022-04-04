@@ -166,7 +166,7 @@ class _LoginSignUpState extends State<LoginSignUp>
     var digest = sha256.convert(bytes); //hash password input
 
     _user =
-        await DatabaseHelper.getUserByUsernameFirebase(_controllerUsernameLogin.text);
+      await DatabaseHelper.getUserByUsernameFirebase(_controllerUsernameLogin.text);
     try {
       if (_user['password'] == digest.toString()) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -324,71 +324,77 @@ class _LoginSignUpState extends State<LoginSignUp>
                 physics: const NeverScrollableScrollPhysics(),
                 controller: _controller,
                 children: [
-                  Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 30),
-                        const Text("Enter your details here to log in:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            )),
-                        const SizedBox(height: 30),
-                        TextFormField(
-                            autofocus: true,
-                            focusNode: _focusLogin,
-                            controller: _controllerUsernameLogin,
-                            decoration: const InputDecoration(
-                                labelText: 'Enter your username'),
-                            autovalidateMode: AutovalidateMode.always,
-                            onChanged: (value) {
-                              setState(() {
-                                _username = _controllerUsernameLogin.text;
-                              });
-                            }),
-                        const SizedBox(height: 30),
-                        TextFormField(
-                          obscureText: !_showPasswordLogin,
-                          controller: _controllerPasswordLogin,
-                          decoration: InputDecoration(
-                              labelText: 'Enter your password',
-                              suffixIcon: (GestureDetector(
-                                  onTap: () {
-                                    _toggleVisibilityLogin();
-                                  },
-                                  child: Icon(_showPasswordLogin
-                                      ? Icons.visibility
-                                      : Icons.visibility_off)))),
-                          autovalidateMode: AutovalidateMode.always,
-                          onChanged: (value) {
-                            setState(() {
-                              _password = _controllerPasswordLogin.text;
-                            });
-                          },
-                        ),
-                        const SizedBox(
-                          height: 50,
-                        ),
-                        ElevatedButton(
-                          // only enable the button if all inputs are valid
-                          onPressed: isValidLogin("u", _username) &&
-                                  isValidLogin("p", _password)
-                              ? _submitLogin
-                              : null,
-                          child: Text(
-                            'Log In',
-                            style: Theme.of(context).textTheme.headline6,
-                          ),
-                          //changes colour of button to further highlight valid/invalid input
-                          style: ButtonStyle(
-                            backgroundColor: isValidLogin("u", _username) &&
-                                    isValidLogin("p", _password)
-                                ? MaterialStateProperty.all<Color>(
-                                    Colors.blueAccent)
-                                : MaterialStateProperty.all<Color>(Colors.grey),
-                          ),
-                        ),
-                      ]),
+                  Scrollbar(
+                    thickness: 10,
+                    radius: const Radius.elliptical(5, 5),
+                    child: SingleChildScrollView(
+                      child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 30),
+                            const Text("Enter your details here to log in:",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                )),
+                            const SizedBox(height: 30),
+                            TextFormField(
+                                autofocus: true,
+                                focusNode: _focusLogin,
+                                controller: _controllerUsernameLogin,
+                                decoration: const InputDecoration(
+                                    labelText: 'Enter your username'),
+                                autovalidateMode: AutovalidateMode.always,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _username = _controllerUsernameLogin.text;
+                                  });
+                                }),
+                            const SizedBox(height: 30),
+                            TextFormField(
+                              obscureText: !_showPasswordLogin,
+                              controller: _controllerPasswordLogin,
+                              decoration: InputDecoration(
+                                  labelText: 'Enter your password',
+                                  suffixIcon: (GestureDetector(
+                                      onTap: () {
+                                        _toggleVisibilityLogin();
+                                      },
+                                      child: Icon(_showPasswordLogin
+                                          ? Icons.visibility
+                                          : Icons.visibility_off)))),
+                              autovalidateMode: AutovalidateMode.always,
+                              onChanged: (value) {
+                                setState(() {
+                                  _password = _controllerPasswordLogin.text;
+                                });
+                              },
+                            ),
+                            const SizedBox(
+                              height: 50,
+                            ),
+                            ElevatedButton(
+                              // only enable the button if all inputs are valid
+                              onPressed: isValidLogin("u", _username) &&
+                                      isValidLogin("p", _password)
+                                  ? _submitLogin
+                                  : null,
+                              child: Text(
+                                'Log In',
+                                style: Theme.of(context).textTheme.headline6,
+                              ),
+                              //changes colour of button to further highlight valid/invalid input
+                              style: ButtonStyle(
+                                backgroundColor: isValidLogin("u", _username) &&
+                                        isValidLogin("p", _password)
+                                    ? MaterialStateProperty.all<Color>(
+                                        Colors.blueAccent)
+                                    : MaterialStateProperty.all<Color>(Colors.grey),
+                              ),
+                            ),
+                          ]),
+                    ),
+                  ),
                   //////////////////////////////////////////////////////////////////////////////////////////////////////
                   Scrollbar(
                     thickness: 10,
@@ -487,7 +493,7 @@ class _LoginSignUpState extends State<LoginSignUp>
                           ),
                           ListTile(
                             title: const Text(
-                                "Automatically log in each time you use the app:"),
+                                "Automatically log in on this device:"),
                             trailing: Checkbox(
                               value: _value,
                               onChanged: (value) {
