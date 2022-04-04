@@ -118,8 +118,8 @@ class _LoginSignUpState extends State<LoginSignUp>
       var digest = sha256.convert(bytes); //hash password
 
       var user = User(_controllerUsername.text, digest.toString(),
-          _controllerNickname.text, _value ? 1 : 0);
-      if (_value == true) {
+          _controllerNickname.text);
+      if (_value) {
         _preferences = await SharedPreferences.getInstance();
         _preferences?.setString("username", _controllerUsername.text);
       }
@@ -132,8 +132,7 @@ class _LoginSignUpState extends State<LoginSignUp>
         String username = _controllerUsername.text;
         String password = _controllerPassword.text;
         String nickname = _controllerNickname.text;
-        int auto = _value ? 1 : 0;
-        User userLogin = User(username, password, nickname, auto);
+        User userLogin = User(username, password, nickname);
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
@@ -176,8 +175,7 @@ class _LoginSignUpState extends State<LoginSignUp>
         String username = _user['username'];
         String password = _user['password'];
         String nickname = _user['nickname'];
-        int auto = _user['autoLogin'];
-        User userLogin = User(username, password, nickname, auto);
+        User userLogin = User(username, password, nickname);
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(

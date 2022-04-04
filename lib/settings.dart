@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import 'loginSignUp.dart';
-import 'package:travelsafe_v1/helpers/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings extends StatefulWidget {
@@ -22,7 +21,7 @@ class SettingsState extends State<Settings> {
   @override
   void initState() {
     super.initState();
-    _value = widget.user.autoLogin == 1;
+    _value = false;
     initializePreference().whenComplete(() {
       setState(() {});
     });
@@ -30,6 +29,10 @@ class SettingsState extends State<Settings> {
 
   Future<void> initializePreference() async {
     _preferences = await SharedPreferences.getInstance();
+    var userFound = _preferences?.getString('username');
+    setState(() {
+      _value = userFound != null;
+    });
   }
 
   _submitLogout() async {
@@ -43,7 +46,6 @@ class SettingsState extends State<Settings> {
   }
 
   updateUserAutoLogin() async {
-    await DatabaseHelper.updateUserFirebase(widget.user.username, widget.user.password, widget.user.nickname, _value);
     if(_value){
       _preferences?.setString('username', widget.user.username);
     } else{

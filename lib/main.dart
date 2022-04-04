@@ -68,8 +68,7 @@ class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
       String username = _user['username'];
       String password = _user['password'];
       String nickname = _user['nickname'];
-      int auto = _user['autoLogin'];
-      User userLogin = User(username, password, nickname, auto);
+      User userLogin = User(username, password, nickname);
       Navigator.pushAndRemoveUntil<void>(
         context,
         MaterialPageRoute<void>(

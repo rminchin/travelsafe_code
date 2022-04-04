@@ -9,7 +9,6 @@ class DatabaseHelper {
       'username': user.username,
       'password': user.password,
       'nickname': user.nickname,
-      'autoLogin': user.autoLogin
     })
         .then((value) => print("User Added"))
         .catchError((error) => print("Failed to add user: $error"));
@@ -53,15 +52,14 @@ class DatabaseHelper {
     throw const FormatException();
   }
 
-  static Future<void> updateUserFirebase(String username, String password, String nickname, bool autoLogin) async {
+  static Future<void> updateUserFirebase(String username, String password, String nickname) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     String id = await getIDFirebase(username);
     return users.doc(id)
         .update({
       'username': username,
       'password': password,
-      'nickname': nickname,
-      'autoLogin': autoLogin ? 1 : 0,
+      'nickname': nickname
     })
         .then((value) => print("User Updated"))
         .catchError((error) => print("Failed to update user: $error"));
