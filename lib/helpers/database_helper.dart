@@ -1,83 +1,78 @@
-import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart' as sql;
 import 'user.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DatabaseHelper {
-  static Future<void> createTables(sql.Database database) async {
-    await database.execute(
-        """CREATE TABLE IF NOT EXISTS users(
-        
-        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        username TEXT,
-        password TEXT,
-        nickname TEXT,
-        autoLogin INTEGER
-      )
-      """);
+  static Future<void> addUserFirebase(User user) async {
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
+    return users
+        .add({
+      'username': user.username,
+      'password': user.password,
+      'nickname': user.nickname,
+      'autoLogin': user.autoLogin
+    })
+        .then((value) => print("User Added"))
+        .catchError((error) => print("Failed to add user: $error"));
   }
 
-  static Future<sql.Database> db() async {
-    return sql.openDatabase(
-      'travel_safe.db',
-      version: 1,
-      onCreate: (sql.Database database, int version) async {
-        await createTables(database);
-      },
-    );
+  static Future<Map<String, dynamic>> getUserByUsernameFirebase(String username) async {
+    var collection = FirebaseFirestore.instance.collection('users');
+    var querySnapshot = await collection
+        .where('username', isEqualTo: username)
+        .get();
+
+    for (var snapshot in querySnapshot.docs) {
+      Map<String, dynamic> data = snapshot.data();
+      return data;
+    }
+
+    throw const FormatException();
   }
 
-  // Create new user
-  static Future<int> createUser(User user) async {
-    final db = await DatabaseHelper.db();
-
-    final data = {'username': user.username, 'password': user.password, 'nickname': user.nickname, 'autoLogin': user.autoLogin};
-    final id = await db.insert('users', data,
-        conflictAlgorithm: sql.ConflictAlgorithm.replace);
-    return id;
+  static Future<List<Map<String, dynamic>>> getUsersFirebase() async {
+    List<Map<String, dynamic>> users = [];
+    var collection = FirebaseFirestore.instance.collection('users');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      users.add(data);
+    }
+    return users;
   }
 
-  // Read all users
-  static Future<List<Map<String, dynamic>>> getUsers() async {
-    final db = await DatabaseHelper.db();
-    //await db.execute("""
-      //DELETE FROM users
-    //""");
-    return db.query('users', orderBy: "id");
+  static Future<String> getIDFirebase(String username) async {
+    var collection = FirebaseFirestore.instance.collection('users');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if(data['username'] == username){
+        return doc.id;
+      }
+    }
+
+    throw const FormatException();
   }
 
-  // Read a user by id
-  static Future<List<Map<String, dynamic>>> getUserById(int id) async {
-    final db = await DatabaseHelper.db();
-    return db.query('users', where: "id = ?", whereArgs: [id], limit: 1);
-  }
-
-  static Future<List<Map<String, dynamic>>> getUserByUsername(String username) async {
-    final db = await DatabaseHelper.db();
-    return db.query('users', where: "username = ?", whereArgs: [username], limit: 1);
-  }
-
-  // Update user details
-  static Future<int> updateUser(String username, String password, String nickname, bool autoLogin) async {
-    final db = await DatabaseHelper.db();
-
-    final data = {
+  static Future<void> updateUserFirebase(String username, String password, String nickname, bool autoLogin) async {
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
+    String id = await getIDFirebase(username);
+    return users.doc(id)
+        .update({
       'username': username,
       'password': password,
       'nickname': nickname,
       'autoLogin': autoLogin ? 1 : 0,
-    };
-
-    final result =
-    await db.update('users', data, where: "username = ?", whereArgs: [username]);
-    return result;
+    })
+        .then((value) => print("User Updated"))
+        .catchError((error) => print("Failed to update user: $error"));
   }
 
-  static Future<void> deleteUser(int id) async {
-    final db = await DatabaseHelper.db();
-    try {
-      await db.delete("users", where: "id = ?", whereArgs: [id]);
-    } catch (err) {
-      debugPrint("Something went wrong when deleting: $err");
-    }
+  static Future<void> deleteUserFirebase(String username) async {
+    final collection = FirebaseFirestore.instance.collection('users');
+    collection
+        .doc('username')
+        .delete()
+        .then((_) => print('User Deleted'))
+        .catchError((error) => print('Delete failed: $error'));
   }
 }

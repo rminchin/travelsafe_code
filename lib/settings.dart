@@ -43,13 +43,11 @@ class SettingsState extends State<Settings> {
   }
 
   updateUserAutoLogin() async {
-    await DatabaseHelper.updateUser(widget.user.username, widget.user.password, widget.user.nickname, _value);
+    await DatabaseHelper.updateUserFirebase(widget.user.username, widget.user.password, widget.user.nickname, _value);
     if(_value){
       _preferences?.setString('username', widget.user.username);
-      print("autologin is now true");
     } else{
       _preferences?.remove('username');
-      print("autologin is now false");
     }
   }
 

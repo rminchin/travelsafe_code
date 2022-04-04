@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
+
 import 'emergencyNoLogin.dart';
 import 'loginSignUp.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import 'package:travelsafe_v1/helpers/database_helper.dart';
 import 'homepage.dart';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void main() => runApp(const TravelSafe());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(); //call it before runApp()
+
+  runApp(const TravelSafe());
+}
 
 class TravelSafe extends StatefulWidget {
   const TravelSafe(
@@ -40,7 +48,7 @@ class EmergencyOrLogin extends StatefulWidget {
 
 class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
   SharedPreferences? _preferences; //using shared preferences for 'staying logged in'
-  List<Map<String, dynamic>> _user = [];
+  Map<String, dynamic> _user = {};
 
   @override
   void initState() {
@@ -53,14 +61,14 @@ class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
   Future<void> initializePreference() async{
     _preferences = await SharedPreferences.getInstance();
     //await _preferences?.remove('username');
-    var user_exists = _preferences?.getString('username');
-    if(user_exists != null && widget.loggedOut == 'n'){
+    var userExists = _preferences?.getString('username');
+    if(userExists != null && widget.loggedOut == 'n'){
       _user =
-      await DatabaseHelper.getUserByUsername(user_exists);
-      String username = _user[0]['username'];
-      String password = _user[0]['password'];
-      String nickname = _user[0]['nickname'];
-      int auto = _user[0]['autoLogin'];
+      await DatabaseHelper.getUserByUsernameFirebase(userExists);
+      String username = _user['username'];
+      String password = _user['password'];
+      String nickname = _user['nickname'];
+      int auto = _user['autoLogin'];
       User userLogin = User(username, password, nickname, auto);
       Navigator.pushAndRemoveUntil<void>(
         context,

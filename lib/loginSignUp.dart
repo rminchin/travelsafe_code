@@ -39,14 +39,13 @@ class _LoginSignUpState extends State<LoginSignUp>
   bool _value = false;
 
   List<Map<String, dynamic>> _users = [];
-  List<Map<String, dynamic>> _user = [];
+  Map<String, dynamic> _user = {};
 
   SharedPreferences?
       _preferences; //using shared preferences for 'staying logged in'
 
   void _refreshUsers() async {
-    final data = await DatabaseHelper.getUsers();
-    print(data.length);
+    final data = await DatabaseHelper.getUsersFirebase();
     print(data);
     setState(() {
       _users = data;
@@ -124,7 +123,7 @@ class _LoginSignUpState extends State<LoginSignUp>
         _preferences = await SharedPreferences.getInstance();
         _preferences?.setString("username", _controllerUsername.text);
       }
-      await DatabaseHelper.createUser(user);
+      await DatabaseHelper.addUserFirebase(user);
       try {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Successfully created an account!'),
@@ -167,17 +166,17 @@ class _LoginSignUpState extends State<LoginSignUp>
     var digest = sha256.convert(bytes); //hash password input
 
     _user =
-        await DatabaseHelper.getUserByUsername(_controllerUsernameLogin.text);
+        await DatabaseHelper.getUserByUsernameFirebase(_controllerUsernameLogin.text);
     try {
-      if (_user[0]['password'] == digest.toString()) {
+      if (_user['password'] == digest.toString()) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Successfully logged in!'),
         ));
         _refreshUsers();
-        String username = _user[0]['username'];
-        String password = _user[0]['password'];
-        String nickname = _user[0]['nickname'];
-        int auto = _user[0]['autoLogin'];
+        String username = _user['username'];
+        String password = _user['password'];
+        String nickname = _user['nickname'];
+        int auto = _user['autoLogin'];
         User userLogin = User(username, password, nickname, auto);
         Navigator.pushAndRemoveUntil<void>(
           context,
@@ -194,7 +193,7 @@ class _LoginSignUpState extends State<LoginSignUp>
         ));
       }
     } catch (e) {
-      //in case SQL query fails somehow
+      //in case database query fails somehow
       _controllerUsernameLogin.clear();
       _controllerPasswordLogin.clear();
       _focusLogin.requestFocus();
