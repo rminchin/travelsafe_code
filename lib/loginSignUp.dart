@@ -46,7 +46,6 @@ class _LoginSignUpState extends State<LoginSignUp>
 
   void _refreshUsers() async {
     final data = await DatabaseHelper.getUsersFirebase();
-    print(data);
     setState(() {
       _users = data;
     });
@@ -136,7 +135,7 @@ class _LoginSignUpState extends State<LoginSignUp>
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(user: userLogin)),
+              builder: (BuildContext context) => HomePage(user: userLogin, tab: 2)),
           ModalRoute.withName('/'),
         );
       } catch (e) {
@@ -179,7 +178,7 @@ class _LoginSignUpState extends State<LoginSignUp>
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(user: userLogin)),
+              builder: (BuildContext context) => HomePage(user: userLogin, tab: 2)),
           ModalRoute.withName('/'),
         );
       } else {

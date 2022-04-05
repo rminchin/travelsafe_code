@@ -6,7 +6,8 @@ import 'settings.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
-  const HomePage({Key? key, required this.user}) : super(key: key);
+  final int tab;
+  const HomePage({Key? key, required this.user, required this.tab}) : super(key: key);
 
   @override
   HomePageState createState() => HomePageState();
@@ -14,7 +15,7 @@ class HomePage extends StatefulWidget {
 
 class HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 2;
+  late int _currentIndex = widget.tab;
 
   void _submitEmergency() {
     Navigator.push<void>(

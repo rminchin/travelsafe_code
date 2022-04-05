@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import 'loginSignUp.dart';
+import 'changeUserDetails.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings extends StatefulWidget {
@@ -45,6 +46,13 @@ class SettingsState extends State<Settings> {
             builder: (BuildContext context) => const LoginSignUp()));
   }
 
+  void _changeUserDetails() {
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => ChangeUserDetails(user: widget.user)));
+  }
+
   updateUserAutoLogin() async {
     if(_value){
       _preferences?.setString('username', widget.user.username);
@@ -72,6 +80,14 @@ class SettingsState extends State<Settings> {
                       });
                     },
                   ),
+                ),
+                const SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: _changeUserDetails,
+                  child: Text(
+                    'Change User Details',
+                    style: Theme.of(context).textTheme.headline6,
+                  )
                 ),
                 const SizedBox(height: 30),
                 ElevatedButton(

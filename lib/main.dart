@@ -72,7 +72,7 @@ class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
       Navigator.pushAndRemoveUntil<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => HomePage(user: userLogin)),
+            builder: (BuildContext context) => HomePage(user: userLogin, tab: 2)),
         ModalRoute.withName('/'),
       );
     }

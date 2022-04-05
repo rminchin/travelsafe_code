@@ -52,9 +52,9 @@ class DatabaseHelper {
     throw const FormatException();
   }
 
-  static Future<void> updateUserFirebase(String username, String password, String nickname) async {
+  static Future<void> updateUserFirebase(String old, String username, String password, String nickname) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
-    String id = await getIDFirebase(username);
+    String id = await getIDFirebase(old);
     return users.doc(id)
         .update({
       'username': username,
