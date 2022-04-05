@@ -1,13 +1,12 @@
-import 'package:flutter/material.dart';
-
-import 'emergencyNoLogin.dart';
-import 'loginSignUp.dart';
+import 'emergency/emergency_no_login.dart';
+import 'package:travelsafe_v1/screens/login_signup.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import 'package:travelsafe_v1/helpers/database_helper.dart';
-import 'homepage.dart';
+import 'package:travelsafe_v1/screens/homepage.dart';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

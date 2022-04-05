@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
-import 'loginSignUp.dart';
-import 'changeUserDetails.dart';
+import 'package:travelsafe_v1/screens/login_signup.dart';
+import 'change_user_details.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings extends StatefulWidget {
@@ -67,7 +67,7 @@ class SettingsState extends State<Settings> {
         body: Center(
           child: Column(
               children: [
-                Text('Settings - logged in as ${widget.user.nickname}'),
+                Text('${widget.user.nickname} \'s settings'),
                 const SizedBox(height: 30),
                 ListTile(
                   title: const Text("Automatically log in on this device:"),

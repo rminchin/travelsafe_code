@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/database_helper.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
-
-import 'emergency.dart';
-import 'settings.dart';
-import 'network_screen.dart';
+import 'package:travelsafe_v1/emergency/emergency.dart';
+import 'package:travelsafe_v1/settings/settings.dart';
+import 'package:travelsafe_v1/network/network_screen.dart';
 
 class HomePage extends StatefulWidget {
   final User user;

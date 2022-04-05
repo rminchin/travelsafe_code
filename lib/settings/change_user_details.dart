@@ -1,11 +1,11 @@
-import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/database_helper.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
+import 'package:travelsafe_v1/screens/homepage.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:travelsafe_v1/homepage.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
 
 class ChangeUserDetails extends StatefulWidget {
   final User user;

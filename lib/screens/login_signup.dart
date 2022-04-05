@@ -1,13 +1,13 @@
-import 'package:flutter/material.dart';
-import 'dart:convert';
-
 import 'package:travelsafe_v1/helpers/user.dart';
 import 'package:travelsafe_v1/helpers/database_helper.dart';
-import 'homepage.dart';
-import 'main.dart';
+import 'package:travelsafe_v1/main.dart';
 
+import 'homepage.dart';
+
+import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 
 class LoginSignUp extends StatefulWidget {
   const LoginSignUp({Key? key}) : super(key: key);

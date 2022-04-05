@@ -45,7 +45,7 @@ class NetworkState extends State<Network> {
         body: Center(
           child: Column(
               children: [
-                Text('Network - logged in as ${widget.user.nickname}'),
+                Text('${widget.user.nickname} \'s network'),
                 const SizedBox(height: 30),
                 ElevatedButton(
                     onPressed: _addFriend,
