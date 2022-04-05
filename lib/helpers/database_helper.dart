@@ -39,6 +39,19 @@ class DatabaseHelper {
     return users;
   }
 
+  static Future<List<Map<String, dynamic>>> getRequestsFirebase(String username) async{
+    List<Map<String, dynamic>> requests = [];
+    var collection = FirebaseFirestore.instance.collection('requests');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if(data['to'] == username){
+        requests.add(data);
+      }
+    }
+    return requests;
+  }
+
   static Future<String> getIDFirebase(String username) async {
     var collection = FirebaseFirestore.instance.collection('users');
     var querySnapshot = await collection.get();
