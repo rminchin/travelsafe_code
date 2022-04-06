@@ -31,7 +31,7 @@ class HomePageState extends State<HomePage>
   }
 
   Future<void> initializePreference() async {
-    _requests = await DatabaseHelper.getRequestsFirebase(widget.user.username);
+    _requests = await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
     if (_requests.isNotEmpty) {
       setState(() {
         _network = BottomNavigationBarItem(

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
+import '../helpers/database_helper.dart';
 import 'network_functionality.dart';
+
+import 'package:badges/badges.dart';
 
 class Network extends StatefulWidget {
   final User user;
@@ -13,9 +16,17 @@ class Network extends StatefulWidget {
 }
 
 class NetworkState extends State<Network> {
+  List<Map<String, dynamic>> _requests = [];
   @override
   void initState() {
     super.initState();
+    initializePreference().whenComplete(() {
+      setState(() {});
+    });
+  }
+
+  Future<void> initializePreference() async {
+    _requests = await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
   }
 
   _addFriend() async {
@@ -45,7 +56,7 @@ class NetworkState extends State<Network> {
         body: Center(
           child: Column(
               children: [
-                Text('${widget.user.nickname} \'s network'),
+                Text('${widget.user.nickname}\'s network'),
                 const SizedBox(height: 30),
                 ElevatedButton(
                     onPressed: _addFriend,
@@ -55,11 +66,15 @@ class NetworkState extends State<Network> {
                     )
                 ),
                 const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: _viewRequests,
-                  child: Text(
-                    'View friend requests',
-                    style: Theme.of(context).textTheme.headline6,
+                Badge(
+                  badgeContent: Text(_requests.length.toString()),
+                  showBadge: _requests.isNotEmpty,
+                  child: ElevatedButton(
+                    onPressed: _viewRequests,
+                    child: Text(
+                      'View friend requests',
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 30),

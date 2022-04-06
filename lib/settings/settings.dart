@@ -32,7 +32,7 @@ class SettingsState extends State<Settings> {
     _preferences = await SharedPreferences.getInstance();
     var userFound = _preferences?.getString('username');
     setState(() {
-      _value = userFound != null;
+      _value = userFound != null && userFound == widget.user.username;
     });
   }
 
@@ -67,7 +67,7 @@ class SettingsState extends State<Settings> {
         body: Center(
           child: Column(
               children: [
-                Text('${widget.user.nickname} \'s settings'),
+                Text('${widget.user.nickname}\'s settings'),
                 const SizedBox(height: 30),
                 ListTile(
                   title: const Text("Automatically log in on this device:"),
