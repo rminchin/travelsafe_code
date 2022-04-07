@@ -1,3 +1,5 @@
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+
 import 'emergency/emergency_no_login.dart';
 import 'package:travelsafe_v1/screens/login_signup.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
@@ -25,6 +27,18 @@ class TravelSafe extends StatefulWidget {
 }
 
 class _TravelSafeState extends State<TravelSafe> {
+  @override
+  void initState() {
+    super.initState();
+    configOneSignal();
+  }
+
+  void configOneSignal()
+  {
+    OneSignal.shared.setAppId('4482ca21-5afa-43f7-8f09-d7b0b7d196f1');
+
+  }
+
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
@@ -125,7 +139,7 @@ class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
             ElevatedButton(
               onPressed: _submitLogin,
               child: Text(
-                'Log In',
+                'Log In or Sign Up',
                 style: Theme.of(context).textTheme.headline6,
               ),
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/database_helper.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import 'package:travelsafe_v1/screens/homepage.dart';
+import 'package:travelsafe_v1/helpers/notification_handler.dart';
 
 class AddFriend extends StatefulWidget {
   User user;
@@ -69,6 +70,8 @@ class AddFriendState extends State<AddFriend> {
       _requests.add(u);
     });
     await findMatchingUsers();
+    NotificationHandler n = NotificationHandler();
+    await n.sendNotification([u['tokenId']], widget.user.username + " has added you!", "New friend request");
   }
 
   Future<void> removeRequest(String username) async {

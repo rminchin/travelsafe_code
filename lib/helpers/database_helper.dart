@@ -1,15 +1,22 @@
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+
 import 'user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 class DatabaseHelper {
   static Future<void> addUserFirebase(User user) async {
+    final status = await OneSignal.shared.getDeviceState();
+    final String? osUserID = status?.userId;
+    print(osUserID);
+
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     return users
         .add({
       'username': user.username,
       'password': user.password,
       'nickname': user.nickname,
+      'tokenId': osUserID,
     })
         .then((value) => print("User Added"))
         .catchError((error) => print("Failed to add user: $error"));

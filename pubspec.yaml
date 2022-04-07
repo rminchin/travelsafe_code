@@ -37,6 +37,8 @@ dependencies:
   cloud_firestore:
   badges:
   intl:
+  onesignal_flutter:
+  http:
 
 
   # The following adds the Cupertino Icons font to your application.
