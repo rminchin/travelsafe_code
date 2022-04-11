@@ -4,6 +4,9 @@ import 'package:travelsafe_v1/helpers/user.dart';
 import 'package:travelsafe_v1/emergency/emergency.dart';
 import 'package:travelsafe_v1/settings/settings.dart';
 import 'package:travelsafe_v1/network/network_screen.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
+
+import '../network/network_functionality.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -27,6 +30,32 @@ class HomePageState extends State<HomePage>
     super.initState();
     initializePreference().whenComplete(() {
       setState(() {});
+    });
+    configOneSignal();
+  }
+
+  void configOneSignal() {
+    OneSignal.shared.setAppId('4482ca21-5afa-43f7-8f09-d7b0b7d196f1');
+    OneSignal.shared.setLogLevel(OSLogLevel.verbose, OSLogLevel.none);
+
+    OneSignal.shared.setNotificationWillShowInForegroundHandler((
+        OSNotificationReceivedEvent event) {
+      event.complete(event.notification);
+    });
+
+    OneSignal.shared.setNotificationOpenedHandler((
+        OSNotificationOpenedResult openedResult) {
+      var title = openedResult.notification.title;
+      if (title != null) {
+        if (title.contains("request")) {
+          Navigator.pushAndRemoveUntil<void>(
+            context,
+            MaterialPageRoute<void>(
+                builder: (BuildContext context) => ViewRequests(user: widget.user)),
+            ModalRoute.withName('/'),
+          );
+        }
+      }
     });
   }
 

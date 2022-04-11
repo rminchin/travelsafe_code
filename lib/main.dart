@@ -1,5 +1,3 @@
-import 'package:onesignal_flutter/onesignal_flutter.dart';
-
 import 'emergency/emergency_no_login.dart';
 import 'package:travelsafe_v1/screens/login_signup.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
@@ -30,13 +28,6 @@ class _TravelSafeState extends State<TravelSafe> {
   @override
   void initState() {
     super.initState();
-    configOneSignal();
-  }
-
-  void configOneSignal()
-  {
-    OneSignal.shared.setAppId('4482ca21-5afa-43f7-8f09-d7b0b7d196f1');
-
   }
 
   @override
