@@ -47,11 +47,18 @@ class HomePageState extends State<HomePage>
         OSNotificationOpenedResult openedResult) {
       var title = openedResult.notification.title;
       if (title != null) {
-        if (title.contains("request")) {
+        if (title == 'New contact request') {
           Navigator.pushAndRemoveUntil<void>(
             context,
             MaterialPageRoute<void>(
                 builder: (BuildContext context) => ViewRequests(user: widget.user)),
+            ModalRoute.withName('/'),
+          );
+        } else if (title == 'New contact added'){
+          Navigator.pushAndRemoveUntil<void>(
+            context,
+            MaterialPageRoute<void>(
+                builder: (BuildContext context) => ManageNetwork(user: widget.user)),
             ModalRoute.withName('/'),
           );
         }

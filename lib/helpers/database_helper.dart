@@ -8,7 +8,6 @@ class DatabaseHelper {
   static Future<void> addUserFirebase(User user) async {
     final status = await OneSignal.shared.getDeviceState();
     final String? osUserID = status?.userId;
-    print(osUserID);
 
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     return users
@@ -180,7 +179,6 @@ class DatabaseHelper {
     for (var doc in querySnapshot.docs) {
       Map<String, dynamic> data = doc.data();
       if ((data['user1'] == user1 && data['user2'] == user2) || (data['user1'] == user2 && data['user2'] == user1)) {
-        print("here");
         return doc.id;
       }
     }
@@ -218,7 +216,7 @@ class DatabaseHelper {
     collection
         .doc(id)
         .delete()
-        .then((_) => print('User Deleted'))
-        .catchError((error) => print('Delete failed: $error'));
+        .then((_) => print('Friendship removed'))
+        .catchError((error) => print('Removal failed: $error'));
   }
 }

@@ -31,6 +31,7 @@ class ManageNetwork extends StatefulWidget {
 class AddFriendState extends State<AddFriend> {
   final TextEditingController _controllerSearchbar = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
+  late NotificationHandler n;
 
   List<Map<String, dynamic>> _friends = [];
   List<Map<String, dynamic>> _requests = [];
@@ -39,6 +40,7 @@ class AddFriendState extends State<AddFriend> {
   @override
   void initState() {
     super.initState();
+    n = NotificationHandler();
     initializePreference().whenComplete(() {
       setState(() {});
     });
@@ -70,8 +72,7 @@ class AddFriendState extends State<AddFriend> {
       _requests.add(u);
     });
     await findMatchingUsers();
-    NotificationHandler n = NotificationHandler();
-    await n.sendNotification([u['tokenId']], widget.user.username + " has added you!", "New friend request");
+    await n.sendNotification([u['tokenId']], widget.user.username + " has added you!", "New contact request");
   }
 
   Future<void> removeRequest(String username) async {
@@ -186,10 +187,12 @@ class AddFriendState extends State<AddFriend> {
 
 class ViewRequestsState extends State<ViewRequests> {
   List<Map<String, dynamic>> _results = [];
+  late NotificationHandler n;
 
   @override
   void initState() {
     super.initState();
+    n = NotificationHandler();
     initializePreference().whenComplete(() {
       setState(() {});
     });
@@ -216,6 +219,7 @@ class ViewRequestsState extends State<ViewRequests> {
       content: Text('Request accepted'),
     ));
     await findMatchingUsers();
+    await n.sendNotification([u['tokenId']], widget.user.username + " has accepted your request", "New contact added");
   }
 
   Future<void> removeRequest(String username) async {
