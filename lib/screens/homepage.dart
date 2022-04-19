@@ -5,8 +5,8 @@ import 'package:travelsafe_v1/emergency/emergency.dart';
 import 'package:travelsafe_v1/settings/settings.dart';
 import 'package:travelsafe_v1/network/network_screen.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
-
 import '../network/network_functionality.dart';
+import '../maps/map.dart';
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -36,7 +36,7 @@ class HomePageState extends State<HomePage>
 
   void configOneSignal() {
     OneSignal.shared.setAppId('4482ca21-5afa-43f7-8f09-d7b0b7d196f1');
-    OneSignal.shared.setLogLevel(OSLogLevel.verbose, OSLogLevel.none);
+    OneSignal.shared.setLogLevel(OSLogLevel.none, OSLogLevel.none);
 
     OneSignal.shared.setNotificationWillShowInForegroundHandler((
         OSNotificationReceivedEvent event) {
@@ -98,9 +98,7 @@ class HomePageState extends State<HomePage>
     Widget widget2 = Container(); // default
     switch (_currentIndex) {
       case 0:
-        widget2 = const FlutterLogo(
-          size: 100,
-        );
+        widget2 = MapGenerate(user: widget.user);
         break;
 
       case 1:

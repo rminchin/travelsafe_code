@@ -1,3 +1,4 @@
+import 'package:location/location.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import 'user.dart';
@@ -184,6 +185,28 @@ class DatabaseHelper {
     }
 
     throw const FormatException();
+  }
+
+  static Future<void> addLocation(LocationData loc, String username, String nickname) async{
+    CollectionReference location = FirebaseFirestore.instance.collection('locationStream');
+    return location.doc(username).set({
+      'latitude': loc.latitude,
+      'longitude': loc.longitude,
+      'name': nickname
+    }, SetOptions(merge: true))
+        .then((value) => print("Location added"))
+        .catchError((error) => print("Failed to add location: $error"));
+  }
+
+  static Future<void> addLocationSelf(LocationData loc, String username, String nickname) async{
+    CollectionReference location = FirebaseFirestore.instance.collection('location');
+    return location.doc(username).set({
+      'latitude': loc.latitude,
+      'longitude': loc.longitude,
+      'name': nickname
+    }, SetOptions(merge: true))
+        .then((value) => print("Location added"))
+        .catchError((error) => print("Failed to add location: $error"));
   }
 
   static Future<void> updateUserFirebase(String old, String username,
