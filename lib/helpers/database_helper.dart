@@ -13,11 +13,11 @@ class DatabaseHelper {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     return users
         .add({
-      'username': user.username,
-      'password': user.password,
-      'nickname': user.nickname,
-      'tokenId': osUserID,
-    })
+          'username': user.username,
+          'password': user.password,
+          'nickname': user.nickname,
+          'tokenId': osUserID,
+        })
         .then((value) => print("User Added"))
         .catchError((error) => print("Failed to add user: $error"));
   }
@@ -37,15 +37,16 @@ class DatabaseHelper {
     throw const FormatException();
   }
 
-  static Future<List<Map<String, dynamic>>> findUserFirebase(String username,
-      String user) async {
+  static Future<List<Map<String, dynamic>>> findUserFirebase(
+      String username, String user) async {
     List<Map<String, dynamic>> matchingUsers = [];
     var collection = FirebaseFirestore.instance.collection('users');
     var querySnapshot = await collection.get();
 
     for (var snapshot in querySnapshot.docs) {
       Map<String, dynamic> data = snapshot.data();
-      if (data['username'].toLowerCase().contains(username.toLowerCase()) && data['username'] != user) {
+      if (data['username'].toLowerCase().contains(username.toLowerCase()) &&
+          data['username'] != user) {
         matchingUsers.add(data);
       }
     }
@@ -105,35 +106,32 @@ class DatabaseHelper {
     return friends;
   }
 
-  static Future<void> sendRequestFirebase(String from, String to, String nick) async {
-    CollectionReference users = FirebaseFirestore.instance.collection(
-        'requests');
+  static Future<void> sendRequestFirebase(
+      String from, String to, String nick) async {
+    CollectionReference users =
+        FirebaseFirestore.instance.collection('requests');
     return users
-        .add({
-      'from': from,
-      'to': to,
-      'from_nickname': nick
-    })
+        .add({'from': from, 'to': to, 'from_nickname': nick})
         .then((value) => print("Request sent"))
         .catchError((error) => print("Failed to send request: $error"));
   }
 
-  static Future<void> acceptFriendFirebase(String from, String to, String from_nick,
-      String to_nick) async {
-    CollectionReference friends = FirebaseFirestore.instance.collection(
-        'friends');
+  static Future<void> acceptFriendFirebase(
+      String from, String to, String from_nick, String to_nick) async {
+    CollectionReference friends =
+        FirebaseFirestore.instance.collection('friends');
     var currentDate = DateTime.now();
     final DateFormat formatter = DateFormat('yMMMM');
     final String formatted = formatter.format(currentDate);
     await removeRequestFirebase(from, to);
     return friends
         .add({
-      'user1': from,
-      'user2': to,
-      'user1_nickname': from_nick,
-      'user2_nickname': to_nick,
-      'since': formatted,
-    })
+          'user1': from,
+          'user2': to,
+          'user1_nickname': from_nick,
+          'user2_nickname': to_nick,
+          'since': formatted,
+        })
         .then((value) => print("Friend added"))
         .catchError((error) => print("Failed to add friend: $error"));
   }
@@ -179,7 +177,8 @@ class DatabaseHelper {
     var querySnapshot = await collection.get();
     for (var doc in querySnapshot.docs) {
       Map<String, dynamic> data = doc.data();
-      if ((data['user1'] == user1 && data['user2'] == user2) || (data['user1'] == user2 && data['user2'] == user1)) {
+      if ((data['user1'] == user1 && data['user2'] == user2) ||
+          (data['user1'] == user2 && data['user2'] == user1)) {
         return doc.id;
       }
     }
@@ -187,38 +186,180 @@ class DatabaseHelper {
     throw const FormatException();
   }
 
-  static Future<void> addLocation(LocationData loc, String username, String nickname) async{
-    CollectionReference location = FirebaseFirestore.instance.collection('locationStream');
-    return location.doc(username).set({
-      'latitude': loc.latitude,
-      'longitude': loc.longitude,
-      'name': nickname
-    }, SetOptions(merge: true))
+  static Future<void> addLocation(
+      LocationData loc, String username, String nickname) async {
+    CollectionReference location =
+        FirebaseFirestore.instance.collection('location');
+    return location
+        .doc(username)
+        .set({
+          'latitude': loc.latitude,
+          'longitude': loc.longitude,
+          'name': nickname
+        }, SetOptions(merge: true))
         .then((value) => print("Location added"))
         .catchError((error) => print("Failed to add location: $error"));
   }
 
-  static Future<void> addLocationSelf(LocationData loc, String username, String nickname) async{
-    CollectionReference location = FirebaseFirestore.instance.collection('location');
-    return location.doc(username).set({
+  static Future<void> addLocationSelf(
+      LocationData loc, String username, String nickname) async {
+    CollectionReference location =
+    FirebaseFirestore.instance.collection('locationSelf');
+    return location
+        .doc(username)
+        .set({
       'latitude': loc.latitude,
       'longitude': loc.longitude,
       'name': nickname
     }, SetOptions(merge: true))
-        .then((value) => print("Location added"))
-        .catchError((error) => print("Failed to add location: $error"));
+        .then((value) => print("Location self added"))
+        .catchError((error) => print("Failed to add location self: $error"));
   }
 
-  static Future<void> updateUserFirebase(String old, String username,
-      String password, String nickname) async {
+  static Future<void> removeLocation(String username) async {
+    CollectionReference location =
+        FirebaseFirestore.instance.collection('location');
+    location
+        .doc(username)
+        .delete()
+        .then((_) => print('Location Deleted'))
+        .catchError((error) => print('Deletion failed: $error'));
+  }
+
+  static Future<void> removeLocationSelf(String username) async {
+    CollectionReference location =
+    FirebaseFirestore.instance.collection('locationSelf');
+    location
+        .doc(username)
+        .delete()
+        .then((_) => print('Location self Deleted'))
+        .catchError((error) => print('Deletion failed: $error'));
+  }
+
+  static Future<void> addStreamFirebase(
+      String username, String viewer) async {
+    CollectionReference document = FirebaseFirestore.instance.collection('stopped');
+    return document
+        .doc(username)
+        .set({'username': username})
+        .then((value) => print("Notification added"))
+        .catchError((error) => print("Failed to add notification: $error"));
+  }
+
+  static Future<bool> findStreamFirebase() async {
+    CollectionReference stream = FirebaseFirestore.instance.collection('stopped');
+    var querySnapshot = await stream.get();
+    return querySnapshot.size > 0 ? true : false;
+  }
+
+  static Future<String> getUsernameStreamFirebase() async {
+    var collection = FirebaseFirestore.instance.collection('stopped');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      return data['username'];
+    }
+
+    throw const FormatException();
+  }
+
+  static Future<void> removeStreamFirebase(String username) async {
+    CollectionReference document = FirebaseFirestore.instance.collection('stopped');
+    document
+        .doc(username)
+        .delete()
+        .then((_) => print('Notification Deleted'))
+        .catchError((error) => print('Deletion failed: $error'));
+
+    var collection = FirebaseFirestore.instance.collection('streams');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['streamer'] == username) {
+        String id = await getStreamIDFirebase(username, data['viewer']);
+        collection
+            .doc(id)
+            .delete()
+            .then((_) => print('Viewer Deleted end of stream'))
+            .catchError((error) => print('Deletion failed: $error'));
+      }
+    }
+  }
+
+  static Future<void> addViewerFirebase(String streamer, String viewer) async {
+    CollectionReference document = FirebaseFirestore.instance.collection('streams');
+    return document
+        .add({'streamer': streamer,
+              'viewer': viewer})
+        .then((value) => print("Viewer added"))
+        .catchError((error) => print("Failed to add viewer: $error"));
+  }
+
+  static Future<void> removeViewerFirebase(String streamer, String viewer) async {
+    CollectionReference document = FirebaseFirestore.instance.collection('streams');
+    String id = await getStreamIDFirebase(streamer,viewer);
+    return document
+        .doc(id)
+        .delete()
+        .then((_) => print('Viewer Deleted'))
+        .catchError((error) => print('Delete failed: $error'));
+  }
+
+  static Future<String> getStreamIDFirebase(String streamer, String viewer) async {
+    var collection = FirebaseFirestore.instance.collection('streams');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['streamer'] == streamer && data['viewer'] == viewer) {
+        return doc.id;
+      }
+    }
+
+    throw const FormatException();
+  }
+
+  static Future<bool> checkStreamingFirebase(String streamer) async {
+    var collection = FirebaseFirestore.instance.collection('streams');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      print(data['streamer']);
+      if (data['streamer'] == streamer) {
+        return true;
+      }
+    }
+    collection = FirebaseFirestore.instance.collection('location');
+    querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      if(doc.id == streamer){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static Future<List<Map<String, dynamic>>> getViewersFirebase(
+      String username) async {
+    List<Map<String, dynamic>> viewers = [];
+    var collection = FirebaseFirestore.instance.collection('streams');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['streamer'] == username) {
+        viewers.add(data);
+      }
+    }
+    return viewers;
+  }
+
+  static Future<void> updateUserFirebase(
+      String old, String username, String password, String nickname) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     String id = await getIDFirebase(old);
-    return users.doc(id)
-        .update({
-      'username': username,
-      'password': password,
-      'nickname': nickname
-    })
+    return users
+        .doc(id)
+        .update(
+            {'username': username, 'password': password, 'nickname': nickname})
         .then((value) => print("User Updated"))
         .catchError((error) => print("Failed to update user: $error"));
   }
@@ -233,7 +374,8 @@ class DatabaseHelper {
         .catchError((error) => print('Delete failed: $error'));
   }
 
-  static Future<void> removeFriendFirebase(String username, String other) async {
+  static Future<void> removeFriendFirebase(
+      String username, String other) async {
     final collection = FirebaseFirestore.instance.collection('friends');
     String id = await getFriendIDFirebase(username, other);
     collection

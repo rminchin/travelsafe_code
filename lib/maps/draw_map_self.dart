@@ -2,38 +2,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
-import 'package:travelsafe_v1/helpers/database_helper.dart';
-
+import '../helpers/database_helper.dart';
 import '../helpers/user.dart';
 import '../screens/homepage.dart';
+import '../helpers/globals.dart' as globals;
 
-class DrawMap extends StatefulWidget {
-  String username;
+class DrawMapSelf extends StatefulWidget {
   User user;
-  DrawMap({Key? key, required this.username, required this.user})
-      : super(key: key);
+  DrawMapSelf({Key? key, required this.user}) : super(key: key);
 
   @override
-  DrawMapState createState() => DrawMapState();
+  DrawMapSelfState createState() => DrawMapSelfState();
 }
 
-class DrawMapState extends State<DrawMap> {
+class DrawMapSelfState extends State<DrawMapSelf> {
   final loc.Location location = loc.Location();
   late GoogleMapController _controller;
   bool _added = false;
-  bool _called = false;
   double _zoom = 16;
 
   @override
   void initState() {
     super.initState();
-    initializePreference().whenComplete(() {
-      setState(() {});
-    });
-  }
-
-  Future<void> initializePreference() async {
-    await DatabaseHelper.addViewerFirebase(widget.username, widget.user.username);
   }
 
   @override
@@ -41,7 +31,7 @@ class DrawMapState extends State<DrawMap> {
     return SizedBox(
         height: 400,
         child: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('location').snapshots(),
+          stream: FirebaseFirestore.instance.collection('locationSelf').snapshots(),
           builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
             if (_added) {
               if (!snapshot.hasData) {
@@ -56,10 +46,10 @@ class DrawMapState extends State<DrawMap> {
             return Scaffold(
                 appBar: AppBar(
                     centerTitle: true,
-                    title: Text(widget.username + "'s location"),
+                    title: const Text('Your location'),
                     leading: BackButton(
                       color: Colors.white,
-                      onPressed: _backScreenStoppedWatching,
+                      onPressed: _backScreen,
                     )),
                 body: GoogleMap(
                   mapType: MapType.normal,
@@ -84,62 +74,37 @@ class DrawMapState extends State<DrawMap> {
   }
 
   Future<void> mymap(AsyncSnapshot<QuerySnapshot> snapshot) async {
-    try {
-      if (snapshot.data!.docs.isNotEmpty) {
-        double zoom = await _controller.getZoomLevel();
-        setState(() {
-          _zoom = zoom;
-        });
+    double zoom = await _controller.getZoomLevel();
+    setState(() {
+      _zoom = zoom;
+    });
 
-        await _controller
-            .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-                target: LatLng(
-                  snapshot.data!.docs.singleWhere(
-                      (element) => element.id == widget.username)['latitude'],
-                  snapshot.data!.docs.singleWhere(
-                      (element) => element.id == widget.username)['longitude'],
-                ),
-                zoom: _zoom)));
-      }
-    } on StateError {
-      if (!_called) {
-        _backScreenStopped();
-      }
-    }
+    await _controller
+        .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
+            target: LatLng(
+              snapshot.data!.docs.singleWhere(
+                  (element) => element.id == widget.user.username)['latitude'],
+              snapshot.data!.docs.singleWhere(
+                  (element) => element.id == widget.user.username)['longitude'],
+            ),
+            zoom: _zoom)));
   }
 
   LatLng findLoc(AsyncSnapshot snapshot) {
     LatLng loc = const LatLng(0, 0);
-    try {
-      loc = LatLng(
-        snapshot.data!.docs.singleWhere(
-            (element) => element.id == widget.username)['latitude'],
-        snapshot.data!.docs.singleWhere(
-            (element) => element.id == widget.username)['longitude'],
-      );
-      return loc;
-    } on StateError {
-      if (!_called) {
-        _backScreenStopped();
-      }
-    }
+    loc = LatLng(
+      snapshot.data!.docs
+          .singleWhere((element) => element.id == widget.user.username)['latitude'],
+      snapshot.data!.docs
+          .singleWhere((element) => element.id == widget.user.username)['longitude'],
+    );
     return loc;
   }
 
-  Future<void> _backScreenStopped() async {
-    _called = true;
-    await DatabaseHelper.addStreamFirebase(widget.username, '');
-    Navigator.pushAndRemoveUntil<void>(
-      context,
-      MaterialPageRoute<void>(
-          builder: (BuildContext context) =>
-              HomePage(user: widget.user, tab: 0)),
-      ModalRoute.withName('/'),
-    );
-  }
-
-  Future<void> _backScreenStoppedWatching() async {
-    await DatabaseHelper.removeViewerFirebase(widget.username, widget.user.username);
+  Future<void> _backScreen() async {
+    globals.locationSubscriptionSelf?.cancel();
+    globals.locationSubscriptionSelf = null;
+    await DatabaseHelper.removeLocationSelf(widget.user.username);
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(

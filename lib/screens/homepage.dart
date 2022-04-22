@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/database_helper.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
@@ -59,6 +61,13 @@ class HomePageState extends State<HomePage>
             context,
             MaterialPageRoute<void>(
                 builder: (BuildContext context) => ManageNetwork(user: widget.user)),
+            ModalRoute.withName('/'),
+          );
+        } else if (title == 'New location stream'){
+          Navigator.pushAndRemoveUntil<void>(
+            context,
+            MaterialPageRoute<void>(
+                builder: (BuildContext context) => HomePage(user: widget.user, tab: 0)),
             ModalRoute.withName('/'),
           );
         }
