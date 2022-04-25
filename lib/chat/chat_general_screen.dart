@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/notification_handler.dart';
+import 'chat_functionality.dart';
 
 class ChatScreen extends StatefulWidget {
   final User user;
@@ -46,12 +47,20 @@ class ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  _openChatScreen(String friend) {
-    print('friend');
+  _openChatScreen(String friend) async {
+    Map<String,dynamic> user = await DatabaseHelper.getUserByUsernameFirebase(friend);
+    User user2Found = User(user['username'], user['password'], user['nickname']);
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => OpenChat(user: widget.user, user2: user2Found)));
   }
 
   _createConversation() {
-    print('created');
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => NewConversationSearch(user: widget.user)));
   }
 
   Widget _buildItem(int index) {
@@ -78,7 +87,7 @@ class ChatScreenState extends State<ChatScreen> {
           ),
           label: const Text('Chat'),
           onPressed: () {
-            _openChatScreen(_conversations[index]['username']);
+            _openChatScreen(user);
           },
           style: ButtonStyle(
             backgroundColor: MaterialStateProperty.all<Color>(Colors.white),

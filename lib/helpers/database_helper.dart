@@ -106,6 +106,22 @@ class DatabaseHelper {
     return friends;
   }
 
+  static Future<List<String>> getFriendsListFirebase(
+      String username) async {
+    List<String> friends = [];
+    var collection = FirebaseFirestore.instance.collection('friends');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['user1'] == username) {
+        friends.add(data['user2']);
+      } else if (data['user2'] == username) {
+        friends.add(data['user1']);
+      }
+    }
+    return friends;
+  }
+
   static Future<void> sendRequestFirebase(
       String from, String to, String nick) async {
     CollectionReference users =
@@ -358,24 +374,47 @@ class DatabaseHelper {
     var querySnapshot = await allMessages.get();
     for (var doc in querySnapshot.docs) {
       Map<String, dynamic> data = doc.data();
-      if (data['user1'] == username || data['user2'] == username) {
+      if (data['username1'] == username || data['username2'] == username) {
         conversations.add(data);
       }
     }
     return conversations;
   }
 
-  static Future<void> addConversation(User user1, User user2) async{
+  static Future<void> addConversation(String user1username, String user2username, String user1nickname, String user2nickname) async{
     CollectionReference conversations = FirebaseFirestore.instance.collection('conversations');
+
     return conversations
         .add({
-      'username1': user1.username,
-      'nickname1': user1.nickname,
-      'username2': user2.username,
-      'nickname2': user2.nickname,
+      'username1': user1username,
+      'nickname1': user1nickname,
+      'username2': user2username,
+      'nickname2': user2nickname,
     })
         .then((value) => print("Conversation Added"))
         .catchError((error) => print("Failed to add conversation: $error"));
+  }
+
+  static Future<void> sendMessage(User from, User to) async {
+    String userId = await findConversation(from.username, to.username);
+    FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(userId)
+        .collection('messages')
+        .add({'from': from.username, 'to': to.username, 'read': 'n'});
+  }
+
+  static Future<String> findConversation(String user1, String user2) async {
+    var collection = FirebaseFirestore.instance.collection('conversations');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if((data['username1'] == user1 && data['username2'] == user2) || (data['username1'] == user2 && data['username2'] == user1)){
+        return doc.id;
+      }
+    }
+
+    throw const FormatException();
   }
 
   static Future<void> updateUserFirebase(
