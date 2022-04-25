@@ -7,6 +7,7 @@ import 'package:travelsafe_v1/emergency/emergency.dart';
 import 'package:travelsafe_v1/settings/settings.dart';
 import 'package:travelsafe_v1/network/network_screen.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
+import '../chat/chat_general_screen.dart';
 import '../network/network_functionality.dart';
 import '../maps/map.dart';
 
@@ -138,9 +139,7 @@ class HomePageState extends State<HomePage>
         break;
 
       case 3:
-        widget2 = const FlutterLogo(
-          size: 300,
-        );
+        widget2 = ChatScreen(user: widget.user);
         break;
 
       case 4:

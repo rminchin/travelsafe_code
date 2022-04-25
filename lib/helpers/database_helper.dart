@@ -352,6 +352,32 @@ class DatabaseHelper {
     return viewers;
   }
 
+  static Future<List<Map<String,dynamic>>> getConversationsFirebase(String username) async {
+    List<Map<String, dynamic>> conversations = [];
+    var allMessages = FirebaseFirestore.instance.collection('conversations');
+    var querySnapshot = await allMessages.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['user1'] == username || data['user2'] == username) {
+        conversations.add(data);
+      }
+    }
+    return conversations;
+  }
+
+  static Future<void> addConversation(User user1, User user2) async{
+    CollectionReference conversations = FirebaseFirestore.instance.collection('conversations');
+    return conversations
+        .add({
+      'username1': user1.username,
+      'nickname1': user1.nickname,
+      'username2': user2.username,
+      'nickname2': user2.nickname,
+    })
+        .then((value) => print("Conversation Added"))
+        .catchError((error) => print("Failed to add conversation: $error"));
+  }
+
   static Future<void> updateUserFirebase(
       String old, String username, String password, String nickname) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
