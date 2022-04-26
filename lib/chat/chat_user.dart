@@ -78,7 +78,7 @@ class OpenChatState extends State<OpenChat> {
       _messages = m;
     });
     Map<String,dynamic> u = await DatabaseHelper.getUserByUsernameFirebase(widget.user2.username);
-    await n.sendNotification(u['tokenId'], widget.user.nickname + " has messaged you!", "New message");
+    await n.sendNotification([u['tokenId']], widget.user.nickname + " has messaged you!", "New message");
   }
 
   void _backScreen() {
@@ -142,14 +142,14 @@ class OpenChatState extends State<OpenChat> {
 
   Widget _sentMessage(Map<String, dynamic> message) {
     return ListTile(
-        title: Text(widget.user.username),
+        title: Text(widget.user.nickname),
         subtitle: Text(message['content']),
         trailing: const Text('Sent'));
   }
 
   Widget _receivedMessage(Map<String, dynamic> message) {
     return ListTile(
-        title: Text(widget.user2.username),
+        title: Text(widget.user2.nickname),
         subtitle: Text(message['content']),
         trailing: const Text('Received'));
   }
