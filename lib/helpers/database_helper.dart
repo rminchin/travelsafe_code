@@ -411,6 +411,14 @@ class DatabaseHelper {
     return messages;
   }
 
+  static Future<void> removeMessagesList() async{
+    final collection = FirebaseFirestore.instance.collection('newMessages');
+    var snapshots = await collection.get();
+    for (var doc in snapshots.docs) {
+      await doc.reference.delete();
+    }
+  }
+
   static Future<void> sendMessage(String from, String to, String content) async {
     String conversationId = await findConversation(from, to);
 

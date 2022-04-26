@@ -43,7 +43,7 @@ class HomePageState extends State<HomePage>
 
     OneSignal.shared.setNotificationWillShowInForegroundHandler((
         OSNotificationReceivedEvent event) {
-      event.complete(event.notification);
+      event.complete(null);
     });
 
     OneSignal.shared.setNotificationOpenedHandler((

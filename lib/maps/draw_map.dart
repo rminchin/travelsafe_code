@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
 import 'package:travelsafe_v1/helpers/database_helper.dart';
 
+import '../chat/chat_functionality.dart';
 import '../helpers/user.dart';
 import '../screens/homepage.dart';
 
@@ -60,7 +61,24 @@ class DrawMapState extends State<DrawMap> {
                     leading: BackButton(
                       color: Colors.white,
                       onPressed: _backScreenStoppedWatching,
-                    )),
+                    ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.question_answer_rounded),
+                      onPressed: () async {
+                        await DatabaseHelper.removeViewerFirebase(widget.username, widget.user.username);
+                        Map<String,dynamic> userFound = await DatabaseHelper.getUserByUsernameFirebase(widget.username);
+                        User user2 = User(userFound['username'], userFound['password'], userFound['nickname']);
+                        Navigator.pushAndRemoveUntil<void>(
+                          context,
+                          MaterialPageRoute<void>(
+                              builder: (BuildContext context) => OpenChat(user: widget.user, user2: user2)),
+                          ModalRoute.withName('/'),
+                        );
+                      },
+                    )
+                  ]
+                ),
                 body: GoogleMap(
                   mapType: MapType.normal,
                   markers: {

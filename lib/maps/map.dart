@@ -118,27 +118,26 @@ class MapGenerateState extends State<MapGenerate> {
   void updateViewers() async {
     List<Map<String,dynamic>> viewers = await DatabaseHelper.getViewersFirebase(widget.user.username);
     if(viewers.length != globals.viewers.length){
-      List<Map<String,dynamic>> viewers = await DatabaseHelper.getViewersFirebase(widget.user.username);
-      if(viewers.length != globals.viewers.length) {
-        if (viewers.length > globals.viewers.length) {
-          for (Map<String, dynamic> m in viewers) {
-            if (!globals.viewers.contains(m)) {
-              ScaffoldMessenger.of(globals.context).showSnackBar(SnackBar(
-                content: Text(m['viewer'] + " has joined your stream!"),
-              ));
-            }
-          }
-        } else {
-          for (Map<String, dynamic> m in globals.viewers) {
-            if (!viewers.contains(m)) {
-              ScaffoldMessenger.of(globals.context).showSnackBar(SnackBar(
-                content: Text(m['viewer'] + " has left your stream"),
-              ));
-            }
+      if (viewers.length > globals.viewers.length) {
+        for (Map<String, dynamic> m in viewers) {
+          if (!globals.viewers.contains(m)) {
+            ScaffoldMessenger.of(globals.context).showSnackBar(SnackBar(
+              content: Text(m['viewer'] + " has joined your stream!"),
+            ));
           }
         }
-        globals.viewers = viewers;
+      } else {
+        for (Map<String, dynamic> m in globals.viewers) {
+          if (!viewers.contains(m)) {
+            ScaffoldMessenger.of(globals.context).showSnackBar(SnackBar(
+              content: Text(m['viewer'] + " has left your stream"),
+            ));
+          }
+        }
       }
+      globals.viewers = viewers;
+    }
+    if(mounted){
       setState(() {
         globals.viewers = viewers;
       });

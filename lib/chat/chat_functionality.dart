@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 
 import '../helpers/database_helper.dart';
+import '../maps/draw_map.dart';
 import '../screens/homepage.dart';
+import 'package:location/location.dart' as loc;
 
 class NewConversationSearch extends StatefulWidget {
   final User user;
@@ -39,11 +43,12 @@ class NewConversationSearchState extends State<NewConversationSearch> {
   }
 
   void _backScreen() {
-    Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                HomePage(user: widget.user, tab: 3)));
+    Navigator.pushAndRemoveUntil<void>(
+      context,
+      MaterialPageRoute<void>(
+          builder: (BuildContext context) => HomePage(user: widget.user, tab: 3)),
+      ModalRoute.withName('/'),
+    );
   }
 
   _openChatScreen(String friendUsername, String friendNickname) async {
@@ -53,11 +58,12 @@ class NewConversationSearchState extends State<NewConversationSearch> {
         await DatabaseHelper.getUserByUsernameFirebase(friendUsername);
     User user2Found =
         User(user['username'], user['password'], user['nickname']);
-    Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                OpenChat(user: widget.user, user2: user2Found)));
+    Navigator.pushAndRemoveUntil<void>(
+      context,
+      MaterialPageRoute<void>(
+          builder: (BuildContext context) => OpenChat(user: widget.user, user2: user2Found)),
+      ModalRoute.withName('/'),
+    );
   }
 
   Future<void> findMatchingUsers() async {
@@ -192,6 +198,9 @@ class OpenChatState extends State<OpenChat> {
   final FocusNode _focusNode = FocusNode();
   bool _isComposing = false;
   String _conversationId = 'mSsxXkc7g8tx3uuGxI8Y'; //dummy id
+  bool _streaming = false;
+  List<Widget> _streamingActions = [];
+  final loc.Location location = loc.Location();
 
   @override
   void initState() {
@@ -205,6 +214,18 @@ class OpenChatState extends State<OpenChat> {
     _conversationId = await DatabaseHelper.findConversation(
         widget.user.username, widget.user2.username);
     _messages = await DatabaseHelper.getMessagesFirebase(_conversationId);
+    _streamingActions = [
+      IconButton(
+          icon: const Icon(Icons.near_me),
+          onPressed: () async {
+            Navigator.pushAndRemoveUntil<void>(
+              context,
+              MaterialPageRoute<void>(
+                  builder: (BuildContext context) => DrawMap(username: widget.user2.username, user: widget.user)),
+              ModalRoute.withName('/'),
+            );
+          })
+    ];
   }
 
   @override
@@ -230,11 +251,12 @@ class OpenChatState extends State<OpenChat> {
   }
 
   void _backScreen() {
-    Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                HomePage(user: widget.user, tab: 3)));
+    Navigator.pushAndRemoveUntil<void>(
+      context,
+      MaterialPageRoute<void>(
+          builder: (BuildContext context) => HomePage(user: widget.user, tab: 3)),
+      ModalRoute.withName('/'),
+    );
   }
 
   Widget _buildTextComposer() {
@@ -281,10 +303,24 @@ class OpenChatState extends State<OpenChat> {
     bool sent =
         _messages[indexToUse]['from'] == widget.user.username ? true : false;
     if (sent) {
-      return SentMessage(_messages[indexToUse]);
+      return _sentMessage(_messages[indexToUse]);
     } else {
-      return ReceivedMessage(_messages[indexToUse]);
+      return _receivedMessage(_messages[indexToUse]);
     }
+  }
+
+  Widget _sentMessage(Map<String, dynamic> message) {
+    return ListTile(
+        title: Text(widget.user.username),
+        subtitle: Text(message['content']),
+        trailing: const Text('Sent'));
+  }
+
+  Widget _receivedMessage(Map<String, dynamic> message) {
+    return ListTile(
+        title: Text(widget.user2.username),
+        subtitle: Text(message['content']),
+        trailing: const Text('Received'));
   }
 
   Future<void> updateMessages() async {
@@ -293,6 +329,18 @@ class OpenChatState extends State<OpenChat> {
     setState(() {
       _messages = m;
     });
+    await DatabaseHelper.removeMessagesList();
+    bool s =
+        await DatabaseHelper.checkStreamingFirebase(widget.user2.username);
+    if(s && mounted){
+      setState(() {
+        _streaming = true;
+      });
+    } else if (mounted){
+      setState(() {
+        _streaming = false;
+      });
+    }
   }
 
   @override
@@ -307,12 +355,14 @@ class OpenChatState extends State<OpenChat> {
           updateMessages();
           return Scaffold(
             appBar: AppBar(
-                centerTitle: true,
-                title: Text("Chatting with " + widget.user2.nickname),
-                leading: BackButton(
-                  color: Colors.white,
-                  onPressed: _backScreen,
-                )),
+              centerTitle: true,
+              title: Text("Chatting with " + widget.user2.nickname),
+              leading: BackButton(
+                color: Colors.white,
+                onPressed: _backScreen,
+              ),
+              actions: _streaming ? _streamingActions : null,
+            ),
             body: Flex(direction: Axis.vertical, children: [
               Expanded(
                 child: Column(
