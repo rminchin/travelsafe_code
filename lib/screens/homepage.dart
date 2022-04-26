@@ -71,6 +71,13 @@ class HomePageState extends State<HomePage>
                 builder: (BuildContext context) => HomePage(user: widget.user, tab: 0)),
             ModalRoute.withName('/'),
           );
+        } else if (title == 'New message'){
+          Navigator.pushAndRemoveUntil<void>(
+            context,
+            MaterialPageRoute<void>(
+                builder: (BuildContext context) => HomePage(user: widget.user, tab: 3)),
+            ModalRoute.withName('/'),
+          );
         }
       }
     });

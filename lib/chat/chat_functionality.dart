@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 
 import '../helpers/database_helper.dart';
+import '../helpers/notification_handler.dart';
 import '../maps/draw_map.dart';
 import '../screens/homepage.dart';
 import 'package:location/location.dart' as loc;
@@ -201,6 +202,7 @@ class OpenChatState extends State<OpenChat> {
   bool _streaming = false;
   List<Widget> _streamingActions = [];
   final loc.Location location = loc.Location();
+  late NotificationHandler n;
 
   @override
   void initState() {
@@ -211,6 +213,7 @@ class OpenChatState extends State<OpenChat> {
   }
 
   Future<void> initializePreference() async {
+    n = NotificationHandler();
     _conversationId = await DatabaseHelper.findConversation(
         widget.user.username, widget.user2.username);
     _messages = await DatabaseHelper.getMessagesFirebase(_conversationId);
@@ -248,6 +251,8 @@ class OpenChatState extends State<OpenChat> {
     setState(() {
       _messages = m;
     });
+    Map<String,dynamic> u = await DatabaseHelper.getUserByUsernameFirebase(widget.user2.username);
+    await n.sendNotification(u['tokenId'], widget.user.nickname + " has messaged you!", "New message");
   }
 
   void _backScreen() {
