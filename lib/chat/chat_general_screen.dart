@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/notification_handler.dart';
-import 'chat_functionality.dart';
+import 'new_conversation.dart';
+import 'chat_user.dart';
 
 class ChatScreen extends StatefulWidget {
   final User user;

@@ -4,7 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
 import 'package:travelsafe_v1/helpers/database_helper.dart';
 
-import '../chat/chat_functionality.dart';
+import '../chat/chat_user.dart';
 import '../helpers/user.dart';
 import '../screens/homepage.dart';
 
