@@ -133,7 +133,7 @@ class DatabaseHelper {
   }
 
   static Future<void> acceptFriendFirebase(
-      String from, String to, String from_nick, String to_nick) async {
+      String from, String to, String fromNick, String toNick) async {
     CollectionReference friends =
         FirebaseFirestore.instance.collection('friends');
     var currentDate = DateTime.now();
@@ -144,8 +144,8 @@ class DatabaseHelper {
         .add({
           'user1': from,
           'user2': to,
-          'user1_nickname': from_nick,
-          'user2_nickname': to_nick,
+          'user1_nickname': fromNick,
+          'user2_nickname': toNick,
           'since': formatted,
         })
         .then((value) => print("Friend added"))
@@ -339,7 +339,6 @@ class DatabaseHelper {
     var querySnapshot = await collection.get();
     for (var doc in querySnapshot.docs) {
       Map<String, dynamic> data = doc.data();
-      print(data['streamer']);
       if (data['streamer'] == streamer) {
         return true;
       }
@@ -395,13 +394,39 @@ class DatabaseHelper {
         .catchError((error) => print("Failed to add conversation: $error"));
   }
 
-  static Future<void> sendMessage(User from, User to) async {
-    String userId = await findConversation(from.username, to.username);
+  static Future<List<Map<String,dynamic>>> getMessagesFirebase(String id) async {
+    List<Map<String, dynamic>> messages = [];
+
+    var messagesFound = FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(id)
+        .collection('messages')
+        .orderBy('at', descending: true);
+
+    var querySnapshot = await messagesFound.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      messages.add(data);
+    }
+    return messages;
+  }
+
+  static Future<void> sendMessage(String from, String to, String content) async {
+    String conversationId = await findConversation(from, to);
+
     FirebaseFirestore.instance
         .collection('conversations')
-        .doc(userId)
+        .doc(conversationId)
         .collection('messages')
-        .add({'from': from.username, 'to': to.username, 'read': 'n'});
+        .add({'from': from, 'to': to, 'at': FieldValue.serverTimestamp(), 'read': 'n', 'content' : content})
+    .then((value) => print("Message sent successfully"))
+    .catchError((error) => print("Message failed to send: $error"));
+
+    FirebaseFirestore.instance.collection('newMessages').add({
+      'from': from, 'to': to, 'at': FieldValue.serverTimestamp(), 'read': 'n', 'content' : content
+    })
+        .then((value) => print("Message sent successfully"))
+        .catchError((error) => print("Message failed to send: $error"));
   }
 
   static Future<String> findConversation(String user1, String user2) async {
