@@ -141,17 +141,106 @@ class OpenChatState extends State<OpenChat> {
   }
 
   Widget _sentMessage(Map<String, dynamic> message) {
-    return ListTile(
-        title: Text(widget.user.nickname),
-        subtitle: Text(message['content']),
-        trailing: const Text('Sent'));
+    return Container(
+      padding: const EdgeInsets.all(4.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          const SizedBox(), // Dynamic width spacer
+          Container(
+            constraints: const BoxConstraints(
+              maxWidth: 310.0,
+            ),
+            padding: const EdgeInsets.only(
+              left: 5.0,
+              top: 5.0,
+              bottom: 5.0,
+              right: 5.0,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.orange,
+                  Colors.orangeAccent,
+                ],
+              ),
+              borderRadius: BorderRadius.all(
+                Radius.circular(40),
+              ),
+            ),
+            child: GestureDetector(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      message['content'],
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox()
+        ],
+      ),
+    );
   }
 
   Widget _receivedMessage(Map<String, dynamic> message) {
-    return ListTile(
-        title: Text(widget.user2.nickname),
-        subtitle: Text(message['content']),
-        trailing: const Text('Received'));
+    return Container(
+      padding: const EdgeInsets.all(4.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          const SizedBox(),
+          Container(
+            constraints: const BoxConstraints(
+              maxWidth: 310.0,
+            ),
+            padding: const EdgeInsets.only(
+              left: 5.0,
+              top: 5.0,
+              bottom: 5.0,
+              right: 5.0,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.lightBlue, Colors.lightBlueAccent],
+              ),
+              borderRadius: BorderRadius.all(
+                Radius.circular(40),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    message['content'],
+                    textAlign: TextAlign.left,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(), // Dynamic width spacer
+        ],
+      ),
+    );
   }
 
   Future<void> updateMessages() async {
