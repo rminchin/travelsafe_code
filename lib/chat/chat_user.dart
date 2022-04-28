@@ -272,49 +272,52 @@ class OpenChatState extends State<OpenChat> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream:
-        FirebaseFirestore.instance.collection('newMessages').snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          updateMessages();
-          return Scaffold(
-            appBar: AppBar(
-              centerTitle: true,
-              title: Text("Chatting with " + widget.user2.nickname),
-              leading: BackButton(
-                color: Colors.white,
-                onPressed: _backScreen,
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: StreamBuilder(
+          stream:
+          FirebaseFirestore.instance.collection('newMessages').snapshots(),
+          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            updateMessages();
+            return Scaffold(
+              appBar: AppBar(
+                centerTitle: true,
+                title: Text("Chatting with " + widget.user2.nickname),
+                leading: BackButton(
+                  color: Colors.white,
+                  onPressed: _backScreen,
+                ),
+                actions: _streaming ? _streamingActions : null,
               ),
-              actions: _streaming ? _streamingActions : null,
-            ),
-            body: Flex(direction: Axis.vertical, children: [
-              Expanded(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Flexible(
-                          child: _messages.isNotEmpty
-                              ? ListView.builder(
-                              padding: const EdgeInsets.all(8.0),
-                              reverse: true,
-                              itemCount: _messages.length * 2,
-                              itemBuilder: (context, index) =>
-                                  _buildMessage(index))
-                              : const Text("No messages to show")),
-                    ]),
-              ),
-              Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Container(
-                      decoration:
-                      BoxDecoration(color: Theme.of(context).cardColor),
-                      child: _buildTextComposer()))
-            ]),
-          );
-        });
+              body: Flex(direction: Axis.vertical, children: [
+                Expanded(
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Flexible(
+                            child: _messages.isNotEmpty
+                                ? ListView.builder(
+                                padding: const EdgeInsets.all(8.0),
+                                reverse: true,
+                                itemCount: _messages.length * 2,
+                                itemBuilder: (context, index) =>
+                                    _buildMessage(index))
+                                : const Text("No messages to show")),
+                      ]),
+                ),
+                Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                        decoration:
+                        BoxDecoration(color: Theme.of(context).cardColor),
+                        child: _buildTextComposer()))
+              ]),
+            );
+          })
+    );
   }
 }

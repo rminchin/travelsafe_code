@@ -353,6 +353,20 @@ class DatabaseHelper {
     return false;
   }
 
+  static Future<List<Map<String,dynamic>>> getLiveStreamsFirebase(String user) async {
+    List<String> friends = await getFriendsListFirebase(user);
+    List<Map<String, dynamic>> streams = [];
+    var collection = FirebaseFirestore.instance.collection('location');
+    var querySnapshot = await collection.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if(friends.contains(doc.id)){
+        streams.add(data);
+      }
+    }
+    return streams;
+  }
+
   static Future<List<Map<String, dynamic>>> getViewersFirebase(
       String username) async {
     List<Map<String, dynamic>> viewers = [];
@@ -442,12 +456,31 @@ class DatabaseHelper {
     var collection = FirebaseFirestore.instance.collection('conversations').doc(id).collection('messages');
     var querySnapshot = await collection.get();
     for(var doc in querySnapshot.docs) {
-      if (doc['read'] == 'n' && doc['from'] == user) {
-        Map<String,dynamic> data = doc.data();
+      Map<String,dynamic> data = doc.data();
+      if (data['read'] == 'n' && data['from'] == user) {
         unread.add(data);
       }
     }
     return unread;
+  }
+
+  static Future<bool> getAllUnreadFirebase(String user) async {
+    var collection = FirebaseFirestore.instance.collection('conversations');
+    var querySnapshot = await collection.get();
+    for(var doc in querySnapshot.docs){
+      Map<String, dynamic> data = doc.data();
+      if(data['username1'] == user || data['username2'] == user){
+        collection = FirebaseFirestore.instance.collection('conversations').doc(doc.id).collection('messages');
+        querySnapshot = await collection.get();
+        for(var doc in querySnapshot.docs){
+          Map<String, dynamic> data = doc.data();
+          if(data['read'] == 'n'){
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   static Future<void> markMessagesReadFirebase(String id, String user) async {

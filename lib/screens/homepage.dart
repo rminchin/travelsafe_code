@@ -26,7 +26,12 @@ class HomePageState extends State<HomePage>
   late int _currentIndex = widget.tab;
   late BottomNavigationBarItem _network = const BottomNavigationBarItem(
       icon: Icon(Icons.people_rounded), label: 'Network');
+  late BottomNavigationBarItem _map = const BottomNavigationBarItem(icon: Icon(Icons.location_on_sharp), label: 'Map');
+  late BottomNavigationBarItem _chat = const BottomNavigationBarItem(icon: Icon(Icons.question_answer_rounded), label: 'Chat');
+
   List<Map<String, dynamic>> _requests = [];
+  List<Map<String, dynamic>> _streams = [];
+  bool _chats = false;
 
   @override
   void initState() {
@@ -84,7 +89,20 @@ class HomePageState extends State<HomePage>
   }
 
   Future<void> initializePreference() async {
+    updateScreen();
+  }
+
+  void _submitEmergency() {
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => Emergency(user: widget.user)));
+  }
+
+  void updateScreen() async {
     _requests = await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+    _streams = await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
     if (_requests.isNotEmpty) {
       setState(() {
         _network = BottomNavigationBarItem(
@@ -95,7 +113,41 @@ class HomePageState extends State<HomePage>
               top: 0.0,
               right: 0.0,
               child:
-                  Icon(Icons.brightness_1, size: 8.0, color: Colors.redAccent),
+              Icon(Icons.brightness_1, size: 8.0, color: Colors.redAccent),
+            )
+          ]),
+        );
+      });
+    }
+
+    if (_streams.isNotEmpty) {
+      setState(() {
+        _map = BottomNavigationBarItem(
+          label: 'Map',
+          icon: Stack(children: const <Widget>[
+            Icon(Icons.location_on_sharp),
+            Positioned(
+              top: 0.0,
+              right: 0.0,
+              child:
+              Icon(Icons.brightness_1, size: 8.0, color: Colors.redAccent),
+            )
+          ]),
+        );
+      });
+    }
+
+    if(_chats) {
+      setState(() {
+        _chat = BottomNavigationBarItem(
+          label: 'Chat',
+          icon: Stack(children: const <Widget>[
+            Icon(Icons.question_answer_rounded),
+            Positioned(
+              top: 0.0,
+              right: 0.0,
+              child:
+              Icon(Icons.brightness_1, size: 8.0, color: Colors.redAccent),
             )
           ]),
         );
@@ -103,15 +155,9 @@ class HomePageState extends State<HomePage>
     }
   }
 
-  void _submitEmergency() {
-    Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-            builder: (BuildContext context) => Emergency(user: widget.user)));
-  }
-
   @override
   Widget build(BuildContext context) {
+    updateScreen();
     Widget widget2 = Container(); // default
     switch (_currentIndex) {
       case 0:
@@ -175,13 +221,11 @@ class HomePageState extends State<HomePage>
                     _currentIndex = newIndex;
                   }),
               items: [
-                const BottomNavigationBarItem(
-                    label: 'Map', icon: Icon(Icons.location_on_sharp)),
+                _map,
                 _network,
                 const BottomNavigationBarItem(
                     label: "Home", icon: Icon(Icons.home_rounded)),
-                const BottomNavigationBarItem(
-                    label: 'Chat', icon: Icon(Icons.question_answer_rounded)),
+                _chat,
                 const BottomNavigationBarItem(
                     label: "Settings", icon: Icon(Icons.settings)),
               ]),
