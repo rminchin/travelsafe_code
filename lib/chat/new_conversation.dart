@@ -90,7 +90,7 @@ class NewConversationSearchState extends State<NewConversationSearch> {
       }
     }
     for (Map<String, dynamic> match in r) {
-      if (!users.contains(match['username'])) {
+      if (!users.contains(match['username']) && friends.contains(match['username'])) {
         newConversation.add(match);
       }
     }

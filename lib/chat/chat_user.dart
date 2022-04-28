@@ -29,6 +29,7 @@ class OpenChatState extends State<OpenChat> {
   List<Widget> _streamingActions = [];
   final loc.Location location = loc.Location();
   late NotificationHandler n;
+  bool _opened = false;
 
   @override
   void initState() {
@@ -246,9 +247,11 @@ class OpenChatState extends State<OpenChat> {
   Future<void> updateMessages() async {
     List<Map<String, dynamic>> m =
     await DatabaseHelper.getMessagesFirebase(_conversationId);
-    setState(() {
-      _messages = m;
-    });
+    if(mounted){
+      setState(() {
+        _messages = m;
+      });
+    }
     await DatabaseHelper.removeMessagesList();
     bool s =
     await DatabaseHelper.checkStreamingFirebase(widget.user2.username);
@@ -260,6 +263,10 @@ class OpenChatState extends State<OpenChat> {
       setState(() {
         _streaming = false;
       });
+    }
+    if(!_opened){
+      _opened = true;
+      await DatabaseHelper.markMessagesReadFirebase(_conversationId, widget.user.username);
     }
   }
 

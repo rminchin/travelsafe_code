@@ -437,6 +437,32 @@ class DatabaseHelper {
         .catchError((error) => print("Message failed to send: $error"));
   }
 
+  static Future<List<Map<String,dynamic>>> getUnreadFirebase(String id, String user) async {
+    List<Map<String,dynamic>> unread = [];
+    var collection = FirebaseFirestore.instance.collection('conversations').doc(id).collection('messages');
+    var querySnapshot = await collection.get();
+    for(var doc in querySnapshot.docs) {
+      if (doc['read'] == 'n' && doc['from'] == user) {
+        Map<String,dynamic> data = doc.data();
+        unread.add(data);
+      }
+    }
+    return unread;
+  }
+
+  static Future<void> markMessagesReadFirebase(String id, String user) async {
+    var collection = FirebaseFirestore.instance.collection('conversations').doc(id).collection('messages');
+    var querySnapshot = await collection.get();
+    for(var doc in querySnapshot.docs) {
+      if(doc['read'] == 'n' && doc['to'] == user){
+        String docID = doc.id;
+        FirebaseFirestore.instance.collection('conversations').doc(id).collection('messages').doc(docID).update({
+          'from': doc['from'], 'to': doc['to'], 'at': doc['at'], 'read': 'y', 'content': doc['content']
+        });
+      }
+    }
+  }
+
   static Future<String> findConversation(String user1, String user2) async {
     var collection = FirebaseFirestore.instance.collection('conversations');
     var querySnapshot = await collection.get();

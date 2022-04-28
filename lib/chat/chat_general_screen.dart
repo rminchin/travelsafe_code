@@ -1,3 +1,4 @@
+import 'package:badges/badges.dart';
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import '../helpers/database_helper.dart';
@@ -19,6 +20,8 @@ class ChatScreenState extends State<ChatScreen> {
 
   List<Map<String, dynamic>> _results = [];
   List<Map<String, dynamic>> _conversations = [];
+  List<Map<String, dynamic>> _friends = [];
+  List<int> _unreadIndexes = [];
 
   @override
   void initState() {
@@ -32,6 +35,8 @@ class ChatScreenState extends State<ChatScreen> {
   Future<void> initializePreference() async {
     _conversations =
     await DatabaseHelper.getConversationsFirebase(widget.user.username);
+    _friends = await DatabaseHelper.getFriendsFirebase(widget.user.username);
+    _unreadIndexes = List<int>.generate(_friends.length, (int index) => 0);
   }
 
   @override
@@ -64,6 +69,16 @@ class ChatScreenState extends State<ChatScreen> {
             builder: (BuildContext context) => NewConversationSearch(user: widget.user)));
   }
 
+  void updateMessages(String user2, int index) async {
+    String conversationId = await DatabaseHelper.findConversation(widget.user.username, user2);
+    List<Map<String, dynamic>> u = await DatabaseHelper.getUnreadFirebase(conversationId, user2);
+    if(mounted){
+      setState(() {
+        _unreadIndexes[index] = u.length;
+      });
+    }
+  }
+
   Widget _buildItem(int index) {
     if (index.isOdd) {
       return const Divider();
@@ -78,22 +93,27 @@ class ChatScreenState extends State<ChatScreen> {
     _conversations[indexToUse]['nickname1'] == widget.user.nickname
         ? _conversations[indexToUse]['nickname2']
         : _conversations[indexToUse]['nickname1'];
+    updateMessages(user, indexToUse);
     return ListTile(
       title: Text(nick),
       subtitle: Text(user),
-      trailing: ElevatedButton.icon(
-          icon: const Icon(
-            Icons.chat_bubble_rounded,
-            color: Colors.blueAccent,
-          ),
-          label: const Text('Chat'),
-          onPressed: () {
-            _openChatScreen(user);
-          },
-          style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
-            foregroundColor: MaterialStateProperty.all<Color>(Colors.black),
-          )),
+      trailing: Badge(
+        badgeContent: _unreadIndexes.isNotEmpty ? Text(_unreadIndexes[indexToUse].toString()) : null,
+        showBadge: _unreadIndexes.isNotEmpty && _unreadIndexes[indexToUse] != 0,
+        child: ElevatedButton.icon(
+            icon: const Icon(
+              Icons.chat_bubble_rounded,
+              color: Colors.blueAccent,
+            ),
+            label: const Text('Chat'),
+            onPressed: () {
+              _openChatScreen(user);
+            },
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+              foregroundColor: MaterialStateProperty.all<Color>(Colors.black),
+            )),
+      ),
     );
   }
 
