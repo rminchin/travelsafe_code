@@ -1,13 +1,13 @@
-import 'package:travelsafe_v1/helpers/user.dart';
-import 'package:travelsafe_v1/helpers/database_helper.dart';
-import 'package:travelsafe_v1/main.dart';
-
 import 'homepage.dart';
+import '../main.dart';
+import '../helpers/database_helper.dart';
+import '../helpers/user.dart';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dart:convert';
-import 'package:crypto/crypto.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/material.dart';
 
 class LoginSignUp extends StatefulWidget {
   const LoginSignUp({Key? key}) : super(key: key);
@@ -46,9 +46,11 @@ class _LoginSignUpState extends State<LoginSignUp>
 
   void _refreshUsers() async {
     final data = await DatabaseHelper.getUsersFirebase();
-    setState(() {
-      _users = data;
-    });
+    if (mounted) {
+      setState(() {
+        _users = data;
+      });
+    }
   }
 
   @override
@@ -73,24 +75,28 @@ class _LoginSignUpState extends State<LoginSignUp>
           _controllerUsername.clear();
           _controllerPassword.clear();
           _controllerNickname.clear();
-          setState(() {
-            _username = _controllerUsernameLogin.text;
-            _password = _controllerPasswordLogin.text;
-            _nickname = _controllerNickname.text;
-            _value = false;
-          });
+          if (mounted) {
+            setState(() {
+              _username = _controllerUsernameLogin.text;
+              _password = _controllerPasswordLogin.text;
+              _nickname = _controllerNickname.text;
+              _value = false;
+            });
+          }
           break;
         case 1:
           _focusSignup.requestFocus();
           _controllerUsernameLogin.clear();
           _controllerPasswordLogin.clear();
-          setState(() {
-            _username = _controllerUsername.text;
-            _password = _controllerPassword.text;
-            _nickname = _controllerNickname.text;
-            _value = false;
-          });
-          break;
+          if (mounted) {
+            setState(() {
+              _username = _controllerUsername.text;
+              _password = _controllerPassword.text;
+              _nickname = _controllerNickname.text;
+              _value = false;
+            });
+            break;
+          }
       }
     }
   }
@@ -98,15 +104,19 @@ class _LoginSignUpState extends State<LoginSignUp>
   bool _showPasswordLogin = false;
   bool _showPasswordSignup = false;
   void _toggleVisibilitySignup() {
-    setState(() {
-      _showPasswordSignup = !_showPasswordSignup;
-    });
+    if (mounted) {
+      setState(() {
+        _showPasswordSignup = !_showPasswordSignup;
+      });
+    }
   }
 
   void _toggleVisibilityLogin() {
-    setState(() {
-      _showPasswordLogin = !_showPasswordLogin;
-    });
+    if (mounted) {
+      setState(() {
+        _showPasswordLogin = !_showPasswordLogin;
+      });
+    }
   }
 
   void _submitSignup() async {
@@ -135,7 +145,8 @@ class _LoginSignUpState extends State<LoginSignUp>
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(user: userLogin, tab: 2)),
+              builder: (BuildContext context) =>
+                  HomePage(user: userLogin, tab: 2)),
           ModalRoute.withName('/'),
         );
       } catch (e) {
@@ -151,11 +162,13 @@ class _LoginSignUpState extends State<LoginSignUp>
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Invalid signup credentials, please try again'),
       ));
-      setState(() {
-        _username = _controllerUsername.text;
-        _password = _controllerPassword.text;
-        _nickname = _controllerNickname.text;
-      });
+      if (mounted) {
+        setState(() {
+          _username = _controllerUsername.text;
+          _password = _controllerPassword.text;
+          _nickname = _controllerNickname.text;
+        });
+      }
     }
   }
 
@@ -163,8 +176,8 @@ class _LoginSignUpState extends State<LoginSignUp>
     var bytes = utf8.encode(_controllerPasswordLogin.text);
     var digest = sha256.convert(bytes); //hash password input
 
-    _user =
-      await DatabaseHelper.getUserByUsernameFirebase(_controllerUsernameLogin.text);
+    _user = await DatabaseHelper.getUserByUsernameFirebase(
+        _controllerUsernameLogin.text);
     try {
       if (_user['password'] == digest.toString()) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -178,7 +191,8 @@ class _LoginSignUpState extends State<LoginSignUp>
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(user: userLogin, tab: 2)),
+              builder: (BuildContext context) =>
+                  HomePage(user: userLogin, tab: 2)),
           ModalRoute.withName('/'),
         );
       } else {
@@ -197,10 +211,12 @@ class _LoginSignUpState extends State<LoginSignUp>
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Invalid login credentials, please try again'),
       ));
-      setState(() {
-        _username = _controllerUsernameLogin.text;
-        _password = _controllerPasswordLogin.text;
-      });
+      if (mounted) {
+        setState(() {
+          _username = _controllerUsernameLogin.text;
+          _password = _controllerPasswordLogin.text;
+        });
+      }
     }
   }
 
@@ -288,7 +304,8 @@ class _LoginSignUpState extends State<LoginSignUp>
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => const EmergencyOrLogin(loggedOut: 'y')));
+            builder: (BuildContext context) =>
+                const EmergencyOrLogin(loggedOut: 'y')));
   }
 
   @override
@@ -343,9 +360,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                                     labelText: 'Enter your username'),
                                 autovalidateMode: AutovalidateMode.always,
                                 onChanged: (value) {
-                                  setState(() {
-                                    _username = _controllerUsernameLogin.text;
-                                  });
+                                  if (mounted) {
+                                    setState(() {
+                                      _username = _controllerUsernameLogin.text;
+                                    });
+                                  }
                                 }),
                             const SizedBox(height: 30),
                             TextFormField(
@@ -362,9 +381,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                                           : Icons.visibility_off)))),
                               autovalidateMode: AutovalidateMode.always,
                               onChanged: (value) {
-                                setState(() {
-                                  _password = _controllerPasswordLogin.text;
-                                });
+                                if (mounted) {
+                                  setState(() {
+                                    _password = _controllerPasswordLogin.text;
+                                  });
+                                }
                               },
                             ),
                             const SizedBox(
@@ -386,7 +407,8 @@ class _LoginSignUpState extends State<LoginSignUp>
                                         isValidLogin("p", _password)
                                     ? MaterialStateProperty.all<Color>(
                                         Colors.blueAccent)
-                                    : MaterialStateProperty.all<Color>(Colors.grey),
+                                    : MaterialStateProperty.all<Color>(
+                                        Colors.grey),
                               ),
                             ),
                           ]),
@@ -417,9 +439,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                             decoration: const InputDecoration(
                               labelText: 'Enter your desired username',
                             ),
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             validator: (text) {
-                              String text2 = returnMessageSignup('u_mess', text!);
+                              String text2 =
+                                  returnMessageSignup('u_mess', text!);
                               if (text2 != 'check') {
                                 return text2;
                               } else {
@@ -427,9 +451,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                               }
                             },
                             onChanged: (value) {
-                              setState(() {
-                                _username = _controllerUsername.text;
-                              });
+                              if (mounted) {
+                                setState(() {
+                                  _username = _controllerUsername.text;
+                                });
+                              }
                             },
                           ),
                           const SizedBox(
@@ -447,9 +473,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                                     child: Icon(_showPasswordSignup
                                         ? Icons.visibility
                                         : Icons.visibility_off)))),
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             validator: (text) {
-                              String text2 = returnMessageSignup('u_pass', text!);
+                              String text2 =
+                                  returnMessageSignup('u_pass', text!);
                               if (text2 != 'check') {
                                 return text2;
                               } else {
@@ -457,9 +485,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                               }
                             },
                             onChanged: (value) {
-                              setState(() {
-                                _password = _controllerPassword.text;
-                              });
+                              if (mounted) {
+                                setState(() {
+                                  _password = _controllerPassword.text;
+                                });
+                              }
                             },
                           ),
                           const SizedBox(
@@ -470,9 +500,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                             decoration: const InputDecoration(
                               labelText: 'Enter your desired nickname',
                             ),
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             validator: (text) {
-                              String text2 = returnMessageSignup('u_nick', text!);
+                              String text2 =
+                                  returnMessageSignup('u_nick', text!);
                               if (text2 != 'check') {
                                 return text2;
                               } else {
@@ -480,9 +512,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                               }
                             },
                             onChanged: (value) {
-                              setState(() {
-                                _nickname = _controllerNickname.text;
-                              });
+                              if (mounted) {
+                                setState(() {
+                                  _nickname = _controllerNickname.text;
+                                });
+                              }
                             },
                           ),
                           const SizedBox(
@@ -494,9 +528,11 @@ class _LoginSignUpState extends State<LoginSignUp>
                             trailing: Checkbox(
                               value: _value,
                               onChanged: (value) {
-                                setState(() {
-                                  _value = value!;
-                                });
+                                if (mounted) {
+                                  setState(() {
+                                    _value = value!;
+                                  });
+                                }
                               },
                             ),
                           ),
@@ -519,7 +555,8 @@ class _LoginSignUpState extends State<LoginSignUp>
                                       isValidSignup("n", _nickname)
                                   ? MaterialStateProperty.all<Color>(
                                       Colors.blueAccent)
-                                  : MaterialStateProperty.all<Color>(Colors.grey),
+                                  : MaterialStateProperty.all<Color>(
+                                      Colors.grey),
                             ),
                           ),
                         ],

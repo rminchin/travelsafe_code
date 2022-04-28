@@ -1,12 +1,12 @@
+import '../chat/chat_user.dart';
+import '../helpers/database_helper.dart';
+import '../helpers/user.dart';
+import '../screens/homepage.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
-import 'package:travelsafe_v1/helpers/database_helper.dart';
-
-import '../chat/chat_user.dart';
-import '../helpers/user.dart';
-import '../screens/homepage.dart';
 
 class DrawMap extends StatefulWidget {
   String username;
@@ -34,7 +34,8 @@ class DrawMapState extends State<DrawMap> {
   }
 
   Future<void> initializePreference() async {
-    await DatabaseHelper.addViewerFirebase(widget.username, widget.user.username);
+    await DatabaseHelper.addViewerFirebase(
+        widget.username, widget.user.username);
   }
 
   @override
@@ -62,23 +63,27 @@ class DrawMapState extends State<DrawMap> {
                       color: Colors.white,
                       onPressed: _backScreenStoppedWatching,
                     ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.question_answer_rounded),
-                      onPressed: () async {
-                        await DatabaseHelper.removeViewerFirebase(widget.username, widget.user.username);
-                        Map<String,dynamic> userFound = await DatabaseHelper.getUserByUsernameFirebase(widget.username);
-                        User user2 = User(userFound['username'], userFound['password'], userFound['nickname']);
-                        Navigator.pushAndRemoveUntil<void>(
-                          context,
-                          MaterialPageRoute<void>(
-                              builder: (BuildContext context) => OpenChat(user: widget.user, user2: user2)),
-                          ModalRoute.withName('/'),
-                        );
-                      },
-                    )
-                  ]
-                ),
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.question_answer_rounded),
+                        onPressed: () async {
+                          await DatabaseHelper.removeViewerFirebase(
+                              widget.username, widget.user.username);
+                          Map<String, dynamic> userFound =
+                              await DatabaseHelper.getUserByUsernameFirebase(
+                                  widget.username);
+                          User user2 = User(userFound['username'],
+                              userFound['password'], userFound['nickname']);
+                          Navigator.pushAndRemoveUntil<void>(
+                            context,
+                            MaterialPageRoute<void>(
+                                builder: (BuildContext context) =>
+                                    OpenChat(user: widget.user, user2: user2)),
+                            ModalRoute.withName('/'),
+                          );
+                        },
+                      )
+                    ]),
                 body: GoogleMap(
                   mapType: MapType.normal,
                   markers: {
@@ -91,10 +96,12 @@ class DrawMapState extends State<DrawMap> {
                   initialCameraPosition:
                       CameraPosition(target: findLoc(snapshot), zoom: _zoom),
                   onMapCreated: (GoogleMapController controller) async {
-                    setState(() {
-                      _controller = controller;
-                      _added = true;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _controller = controller;
+                        _added = true;
+                      });
+                    }
                   },
                 ));
           },
@@ -105,9 +112,11 @@ class DrawMapState extends State<DrawMap> {
     try {
       if (snapshot.data!.docs.isNotEmpty) {
         double zoom = await _controller.getZoomLevel();
-        setState(() {
-          _zoom = zoom;
-        });
+        if (mounted) {
+          setState(() {
+            _zoom = zoom;
+          });
+        }
 
         await _controller
             .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
@@ -157,7 +166,8 @@ class DrawMapState extends State<DrawMap> {
   }
 
   Future<void> _backScreenStoppedWatching() async {
-    await DatabaseHelper.removeViewerFirebase(widget.username, widget.user.username);
+    await DatabaseHelper.removeViewerFirebase(
+        widget.username, widget.user.username);
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(

@@ -1,11 +1,12 @@
+import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
+import '../helpers/user.dart';
+import '../screens/homepage.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
-import '../helpers/database_helper.dart';
-import '../helpers/user.dart';
-import '../screens/homepage.dart';
-import '../helpers/globals.dart' as globals;
 
 class DrawMapSelf extends StatefulWidget {
   User user;
@@ -31,7 +32,8 @@ class DrawMapSelfState extends State<DrawMapSelf> {
     return SizedBox(
         height: 400,
         child: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('locationSelf').snapshots(),
+          stream:
+              FirebaseFirestore.instance.collection('locationSelf').snapshots(),
           builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
             if (_added) {
               if (!snapshot.hasData) {
@@ -63,10 +65,12 @@ class DrawMapSelfState extends State<DrawMapSelf> {
                   initialCameraPosition:
                       CameraPosition(target: findLoc(snapshot), zoom: _zoom),
                   onMapCreated: (GoogleMapController controller) async {
-                    setState(() {
-                      _controller = controller;
-                      _added = true;
-                    });
+                    if (mounted) {
+                      setState(() {
+                        _controller = controller;
+                        _added = true;
+                      });
+                    }
                   },
                 ));
           },
@@ -75,9 +79,11 @@ class DrawMapSelfState extends State<DrawMapSelf> {
 
   Future<void> mymap(AsyncSnapshot<QuerySnapshot> snapshot) async {
     double zoom = await _controller.getZoomLevel();
-    setState(() {
-      _zoom = zoom;
-    });
+    if (mounted) {
+      setState(() {
+        _zoom = zoom;
+      });
+    }
 
     await _controller
         .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
@@ -93,10 +99,10 @@ class DrawMapSelfState extends State<DrawMapSelf> {
   LatLng findLoc(AsyncSnapshot snapshot) {
     LatLng loc = const LatLng(0, 0);
     loc = LatLng(
-      snapshot.data!.docs
-          .singleWhere((element) => element.id == widget.user.username)['latitude'],
-      snapshot.data!.docs
-          .singleWhere((element) => element.id == widget.user.username)['longitude'],
+      snapshot.data!.docs.singleWhere(
+          (element) => element.id == widget.user.username)['latitude'],
+      snapshot.data!.docs.singleWhere(
+          (element) => element.id == widget.user.username)['longitude'],
     );
     return loc;
   }

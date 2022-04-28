@@ -1,15 +1,16 @@
-import 'dart:async';
+import 'draw_map.dart';
+import 'draw_map_self.dart';
+import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
+import '../helpers/notification_handler.dart';
+import '../helpers/user.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:travelsafe_v1/helpers/database_helper.dart';
-import '../helpers/user.dart';
-import 'draw_map.dart';
-import '../helpers/globals.dart' as globals;
-import 'draw_map_self.dart';
-import '../helpers/notification_handler.dart';
+
+import 'dart:async';
 
 class MapGenerate extends StatefulWidget {
   User user;
@@ -23,9 +24,13 @@ class MapGenerateState extends State<MapGenerate> {
   final loc.Location location = loc.Location();
   StreamSubscription<loc.LocationData>? _locationSubscription;
   StreamSubscription<loc.LocationData>? _locationSubscriptionSelf;
-  List<Map<String,dynamic>> _friends = [];
+  List<Map<String, dynamic>> _friends = [];
   bool _streaming = false;
   late NotificationHandler n;
+
+  List<Map<String, dynamic>> _requests = [];
+  List<Map<String, dynamic>> _streams = [];
+  List<Map<String, dynamic>> _chats = [];
 
   @override
   void initState() {
@@ -38,7 +43,7 @@ class MapGenerateState extends State<MapGenerate> {
         globals.locationSubscriptionSelf?.cancel();
         globals.locationSubscriptionSelf = null;
       });
-      if(_streaming == false){
+      if (_streaming == false) {
         setState(() {
           _locationSubscription?.cancel();
           globals.locationSubscription?.cancel();
@@ -46,36 +51,75 @@ class MapGenerateState extends State<MapGenerate> {
           globals.locationSubscription = null;
           globals.viewers = [];
         });
-      } else{
+      } else {
         setState(() {
           _locationSubscription = globals.locationSubscription;
         });
       }
-      location.changeSettings(interval: 3000, accuracy: loc.LocationAccuracy.high);
+      location.changeSettings(
+          interval: 3000, accuracy: loc.LocationAccuracy.high);
       location.enableBackgroundMode(enable: true);
       globals.context = context;
       n = NotificationHandler();
     });
   }
 
-  Future<void> initializePreference() async{
-    bool check2 = await DatabaseHelper.checkStreamingFirebase(widget.user.username);
-    if(check2){
-      setState(() {
-        _streaming = true;
-      });
+  Future<void> initializePreference() async {
+    bool check2 =
+        await DatabaseHelper.checkStreamingFirebase(widget.user.username);
+    if (check2) {
+      if (mounted) {
+        setState(() {
+          _streaming = true;
+        });
+      }
     }
     _friends = await DatabaseHelper.getFriendsFirebase(widget.user.username);
-    globals.viewers = await DatabaseHelper.getViewersFirebase(widget.user.username);
+    globals.viewers =
+        await DatabaseHelper.getViewersFirebase(widget.user.username);
     bool check = await DatabaseHelper.findStreamFirebase();
-    if(check){
+    if (check) {
       String u = await DatabaseHelper.getUsernameStreamFirebase();
-      WidgetsBinding.instance?.addPostFrameCallback((_){
+      WidgetsBinding.instance?.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(u + " has stopped their stream"),
         ));
       });
       await DatabaseHelper.removeStreamFirebase(u);
+    }
+  }
+
+  void updateScreen() async {
+    _requests =
+        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+    _streams =
+        await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
+
+    if (_requests.length > globals.requests.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New friend request!"),
+      ));
+    }
+
+    if (_streams.length > globals.streams.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New livestream started!"),
+      ));
+    }
+
+    if (_chats.length > globals.unread.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New message received!"),
+      ));
+    }
+
+    if (mounted) {
+      setState(() {
+        globals.requests = _requests;
+        globals.streams = _streams;
+        globals.unread = _chats;
+      });
     }
   }
 
@@ -88,36 +132,44 @@ class MapGenerateState extends State<MapGenerate> {
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: _streaming ? _stopListeningLocation : _listenLocation,
-            child: _streaming ? Text('Stop sharing location',
-                style: Theme.of(context).textTheme.headline6)
-                : Text('Start sharing location', style: Theme.of(context).textTheme.headline6),
+            child: _streaming
+                ? Text('Stop sharing location',
+                    style: Theme.of(context).textTheme.headline6)
+                : Text('Start sharing location',
+                    style: Theme.of(context).textTheme.headline6),
           ),
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: _showLocation,
-            child: Text('Show my location', style: Theme.of(context).textTheme.headline6),
+            child: Text('Show my location',
+                style: Theme.of(context).textTheme.headline6),
           ),
-          Text(_streaming ? globals.viewers.isNotEmpty ? "LIVE: " + globals.viewers.length.toString() + " watching" : "LIVE: Waiting for people to join" : ""),
+          Text(_streaming
+              ? globals.viewers.isNotEmpty
+                  ? "LIVE: " + globals.viewers.length.toString() + " watching"
+                  : "LIVE: Waiting for people to join"
+              : ""),
           Expanded(
               child: StreamBuilder(
-                stream:
+            stream:
                 FirebaseFirestore.instance.collection('location').snapshots(),
-                builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  updateViewers();
-                  return buildTiles(snapshot);
-                },
-              )),
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              updateViewers();
+              return buildTiles(snapshot);
+            },
+          )),
         ],
       ),
     );
   }
 
   void updateViewers() async {
-    List<Map<String,dynamic>> viewers = await DatabaseHelper.getViewersFirebase(widget.user.username);
-    if(viewers.length != globals.viewers.length){
+    List<Map<String, dynamic>> viewers =
+        await DatabaseHelper.getViewersFirebase(widget.user.username);
+    if (viewers.length != globals.viewers.length) {
       if (viewers.length > globals.viewers.length) {
         for (Map<String, dynamic> m in viewers) {
           if (!globals.viewers.contains(m)) {
@@ -137,21 +189,23 @@ class MapGenerateState extends State<MapGenerate> {
       }
       globals.viewers = viewers;
     }
-    if(mounted){
+    if (mounted) {
       setState(() {
         globals.viewers = viewers;
       });
     }
   }
 
-  Widget buildTiles(AsyncSnapshot snapshot){
+  Widget buildTiles(AsyncSnapshot snapshot) {
     List<dynamic> itemsList = [];
     List<String> names = [];
-    for(Map<String,dynamic> n in _friends){
-      n['user1'] == widget.user.username ? names.add(n['user2']) : names.add(n['user1']);
+    for (Map<String, dynamic> n in _friends) {
+      n['user1'] == widget.user.username
+          ? names.add(n['user2'])
+          : names.add(n['user1']);
     }
-    for(dynamic f in snapshot.data?.docs){
-      if(names.contains(f.id)){
+    for (dynamic f in snapshot.data?.docs) {
+      if (names.contains(f.id)) {
         itemsList.add(f);
       }
     }
@@ -159,25 +213,22 @@ class MapGenerateState extends State<MapGenerate> {
         itemCount: itemsList.length,
         itemBuilder: (context, index) {
           return ListTile(
-            title:
-            Text(itemsList[index]['name'].toString()),
+            title: Text(itemsList[index]['name'].toString()),
             subtitle: Row(
               children: [
-                Text(itemsList[index]['latitude']
-                    .toString()),
+                Text(itemsList[index]['latitude'].toString()),
                 const SizedBox(
                   width: 20,
                 ),
-                Text(itemsList[index]['longitude']
-                    .toString()),
+                Text(itemsList[index]['longitude'].toString()),
               ],
             ),
             trailing: IconButton(
               icon: const Icon(Icons.directions),
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) =>
-                        DrawMap(username: itemsList[index].id, user: widget.user)));
+                    builder: (context) => DrawMap(
+                        username: itemsList[index].id, user: widget.user)));
               },
             ),
           );
@@ -186,76 +237,97 @@ class MapGenerateState extends State<MapGenerate> {
 
   _getLocation() async {
     final loc.LocationData _locationResult = await location.getLocation();
-    await DatabaseHelper.addLocation(_locationResult, widget.user.username, widget.user.nickname);
+    await DatabaseHelper.addLocation(
+        _locationResult, widget.user.username, widget.user.nickname);
   }
 
   _getLocationSelf() async {
     final loc.LocationData _locationResult = await location.getLocation();
-    await DatabaseHelper.addLocationSelf(_locationResult, widget.user.username, widget.user.nickname);
+    await DatabaseHelper.addLocationSelf(
+        _locationResult, widget.user.username, widget.user.nickname);
   }
 
   _showLocation() async {
     await _getLocationSelf();
-    _locationSubscriptionSelf = location.onLocationChanged.handleError((onError) {
+    _locationSubscriptionSelf =
+        location.onLocationChanged.handleError((onError) {
       _locationSubscriptionSelf?.cancel();
-      setState(() {
-        _locationSubscriptionSelf = null;
-      });
+      if (mounted) {
+        setState(() {
+          _locationSubscriptionSelf = null;
+        });
+      }
     }).listen((loc.LocationData currentlocation) async {
-      await DatabaseHelper.addLocationSelf(currentlocation, widget.user.username, widget.user.nickname);
+      await DatabaseHelper.addLocationSelf(
+          currentlocation, widget.user.username, widget.user.nickname);
     });
-    setState(() {
-      globals.locationSubscriptionSelf = _locationSubscriptionSelf;
-    });
+    if (mounted) {
+      setState(() {
+        globals.locationSubscriptionSelf = _locationSubscriptionSelf;
+      });
+    }
     Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) =>
-            DrawMapSelf(user: widget.user)));
+        builder: (context) => DrawMapSelf(user: widget.user)));
   }
 
   Future<void> _listenLocation() async {
     await _getLocation();
-    List<Map<String, dynamic>> f = await DatabaseHelper.getFriendsFirebase(widget.user.username);
+    List<Map<String, dynamic>> f =
+        await DatabaseHelper.getFriendsFirebase(widget.user.username);
     await DatabaseHelper.startStreamFirebase(widget.user.username);
     List<String> usernames = [];
     List<String> tokens = [];
-    for(Map<String,dynamic> m in f){
-      usernames.add(m['user1'] == widget.user.username ? m['user2'] : m['user1']);
+    for (Map<String, dynamic> m in f) {
+      usernames
+          .add(m['user1'] == widget.user.username ? m['user2'] : m['user1']);
     }
-    for(String u in usernames){
-      Map<String,dynamic> user = await DatabaseHelper.getUserByUsernameFirebase(u);
+    for (String u in usernames) {
+      Map<String, dynamic> user =
+          await DatabaseHelper.getUserByUsernameFirebase(u);
       tokens.add(user['tokenId']);
     }
-    await n.sendNotification(tokens, widget.user.username + " has begun streaming!", "New location stream");
+    await n.sendNotification(tokens,
+        widget.user.username + " has begun streaming!", "New location stream");
     _locationSubscription = location.onLocationChanged.handleError((onError) {
       _locationSubscription?.cancel();
-      setState(() {
-        _locationSubscription = null;
-      });
-    }).listen((loc.LocationData currentlocation) async {
-      if(!_streaming){
+      if (mounted) {
         setState(() {
-          _streaming = true;
+          _locationSubscription = null;
         });
       }
-      await DatabaseHelper.addLocation(currentlocation, widget.user.username, widget.user.nickname);
+    }).listen((loc.LocationData currentlocation) async {
+      if (!_streaming) {
+        if (mounted) {
+          setState(() {
+            _streaming = true;
+          });
+        }
+      }
+      await DatabaseHelper.addLocation(
+          currentlocation, widget.user.username, widget.user.nickname);
     });
-    List<Map<String,dynamic>> viewers = await DatabaseHelper.getViewersFirebase(widget.user.username);
-    setState(() {
-      globals.locationSubscription = _locationSubscription;
-      globals.viewers = viewers;
-    });
+    List<Map<String, dynamic>> viewers =
+        await DatabaseHelper.getViewersFirebase(widget.user.username);
+    if (mounted) {
+      setState(() {
+        globals.locationSubscription = _locationSubscription;
+        globals.viewers = viewers;
+      });
+    }
   }
 
   _stopListeningLocation() async {
     _locationSubscription?.cancel();
     globals.locationSubscription?.cancel();
     await DatabaseHelper.removeLocation(widget.user.username);
-    setState(() {
-      _locationSubscription = null;
-      _streaming = false;
-      globals.locationSubscription = null;
-      globals.viewers = [];
-    });
+    if (mounted) {
+      setState(() {
+        _locationSubscription = null;
+        _streaming = false;
+        globals.locationSubscription = null;
+        globals.viewers = [];
+      });
+    }
   }
 
   _requestPermission() async {

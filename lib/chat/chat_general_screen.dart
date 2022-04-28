@@ -1,10 +1,13 @@
-import 'package:badges/badges.dart';
-import 'package:flutter/material.dart';
-import 'package:travelsafe_v1/helpers/user.dart';
-import '../helpers/database_helper.dart';
-import '../helpers/notification_handler.dart';
 import 'new_conversation.dart';
 import 'chat_user.dart';
+import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
+import '../helpers/notification_handler.dart';
+import '../helpers/user.dart';
+
+import 'package:badges/badges.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class ChatScreen extends StatefulWidget {
   final User user;
@@ -23,6 +26,10 @@ class ChatScreenState extends State<ChatScreen> {
   List<Map<String, dynamic>> _friends = [];
   List<int> _unreadIndexes = [];
 
+  List<Map<String, dynamic>> _requests = [];
+  List<Map<String, dynamic>> _streams = [];
+  List<Map<String, dynamic>> _chats = [];
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +41,7 @@ class ChatScreenState extends State<ChatScreen> {
 
   Future<void> initializePreference() async {
     _conversations =
-    await DatabaseHelper.getConversationsFirebase(widget.user.username);
+        await DatabaseHelper.getConversationsFirebase(widget.user.username);
     _friends = await DatabaseHelper.getFriendsFirebase(widget.user.username);
     _unreadIndexes = List<int>.generate(_friends.length, (int index) => 0);
   }
@@ -48,33 +55,75 @@ class ChatScreenState extends State<ChatScreen> {
   Future<void> findMatchingUsers() async {
     List<Map<String, dynamic>> r = await DatabaseHelper.findUserFirebase(
         _controllerSearchbar.text, widget.user.username);
-    setState(() {
-      _results = r;
-    });
+    if (mounted) {
+      setState(() {
+        _results = r;
+      });
+    }
   }
 
   _openChatScreen(String friend) async {
-    Map<String,dynamic> user = await DatabaseHelper.getUserByUsernameFirebase(friend);
-    User user2Found = User(user['username'], user['password'], user['nickname']);
+    Map<String, dynamic> user =
+        await DatabaseHelper.getUserByUsernameFirebase(friend);
+    User user2Found =
+        User(user['username'], user['password'], user['nickname']);
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => OpenChat(user: widget.user, user2: user2Found)));
+            builder: (BuildContext context) =>
+                OpenChat(user: widget.user, user2: user2Found)));
   }
 
   _createConversation() {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => NewConversationSearch(user: widget.user)));
+            builder: (BuildContext context) =>
+                NewConversationSearch(user: widget.user)));
   }
 
   void updateMessages(String user2, int index) async {
-    String conversationId = await DatabaseHelper.findConversation(widget.user.username, user2);
-    List<Map<String, dynamic>> u = await DatabaseHelper.getUnreadFirebase(conversationId, user2);
-    if(mounted){
+    String conversationId =
+        await DatabaseHelper.findConversation(widget.user.username, user2);
+    List<Map<String, dynamic>> u =
+        await DatabaseHelper.getUnreadFirebase(conversationId, user2);
+    if (mounted) {
       setState(() {
         _unreadIndexes[index] = u.length;
+      });
+    }
+  }
+
+  void updateScreen() async {
+    _requests =
+        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+    _streams =
+        await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
+
+    if (_requests.length > globals.requests.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New friend request!"),
+      ));
+    }
+
+    if (_streams.length > globals.streams.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New livestream started!"),
+      ));
+    }
+
+    if (_chats.length > globals.unread.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New message received!"),
+      ));
+    }
+
+    if (mounted) {
+      setState(() {
+        globals.requests = _requests;
+        globals.streams = _streams;
+        globals.unread = _chats;
       });
     }
   }
@@ -86,19 +135,21 @@ class ChatScreenState extends State<ChatScreen> {
 
     int indexToUse = index ~/ 2;
     String user =
-    _conversations[indexToUse]['username1'] == widget.user.username
-        ? _conversations[indexToUse]['username2']
-        : _conversations[indexToUse]['username1'];
+        _conversations[indexToUse]['username1'] == widget.user.username
+            ? _conversations[indexToUse]['username2']
+            : _conversations[indexToUse]['username1'];
     String nick =
-    _conversations[indexToUse]['nickname1'] == widget.user.nickname
-        ? _conversations[indexToUse]['nickname2']
-        : _conversations[indexToUse]['nickname1'];
+        _conversations[indexToUse]['nickname1'] == widget.user.nickname
+            ? _conversations[indexToUse]['nickname2']
+            : _conversations[indexToUse]['nickname1'];
     updateMessages(user, indexToUse);
     return ListTile(
       title: Text(nick),
       subtitle: Text(user),
       trailing: Badge(
-        badgeContent: _unreadIndexes.isNotEmpty ? Text(_unreadIndexes[indexToUse].toString()) : null,
+        badgeContent: _unreadIndexes.isNotEmpty
+            ? Text(_unreadIndexes[indexToUse].toString())
+            : null,
         showBadge: _unreadIndexes.isNotEmpty && _unreadIndexes[indexToUse] != 0,
         child: ElevatedButton.icon(
             icon: const Icon(
@@ -119,59 +170,67 @@ class ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: Stack(
-            children: <Widget>[
-              Positioned(
-                  top: 0,
-                  right: 0,
-                  child: IconButton(iconSize: 40,
-                      icon: const Icon(Icons.add_circle, color: Colors.green),
-                      onPressed: _createConversation)
-              ),
-              Flex(
-                direction: Axis.vertical,
-                children: [
-                  Expanded(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 50),
-                          TextFormField(
-                            controller: _controllerSearchbar,
-                            decoration: const InputDecoration(
-                              labelText: 'Filter:',
-                              prefixIcon: Icon(Icons.search),
-                            ),
-                            onChanged: (value) async {
-                              await findMatchingUsers();
-                            },
+    return StreamBuilder(
+        stream: FirebaseFirestore.instance
+            .collection('allNotifications')
+            .snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          updateScreen();
+          return Scaffold(
+              body: Stack(children: <Widget>[
+            Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                    iconSize: 40,
+                    icon: const Icon(Icons.add_circle, color: Colors.green),
+                    onPressed: _createConversation)),
+            Flex(
+              direction: Axis.vertical,
+              children: [
+                Expanded(
+                  child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 50),
+                        TextFormField(
+                          controller: _controllerSearchbar,
+                          decoration: const InputDecoration(
+                            labelText: 'Filter:',
+                            prefixIcon: Icon(Icons.search),
                           ),
-                          Flexible(
-                            child: _results.isNotEmpty &&
-                                _controllerSearchbar.text.isNotEmpty
-                                ? ListView.builder(
-                                itemCount: _results.length * 2,
-                                padding: const EdgeInsets.all(16),
-                                itemBuilder: (context, index) =>
-                                    _buildItem(index))
-                                : _conversations.isNotEmpty
-                                ? ListView.builder(
-                                itemCount: _conversations.length * 2,
-                                padding: const EdgeInsets.all(16),
-                                itemBuilder: (context, index) =>
-                                    _buildItem(index))
-                                : _controllerSearchbar.text.isEmpty
-                                ? const Text('No conversations found')
-                                : const Text(
-                                'No matching conversations found'),
-                          )
-                        ]),
-                  ),
-                ],
-              ),
-            ]
-        ));
+                          onChanged: (value) async {
+                            await findMatchingUsers();
+                          },
+                        ),
+                        Flexible(
+                          child: _results.isNotEmpty &&
+                                  _controllerSearchbar.text.isNotEmpty
+                              ? ListView.builder(
+                                  itemCount: _results.length * 2,
+                                  padding: const EdgeInsets.all(16),
+                                  itemBuilder: (context, index) =>
+                                      _buildItem(index))
+                              : _conversations.isNotEmpty
+                                  ? ListView.builder(
+                                      itemCount: _conversations.length * 2,
+                                      padding: const EdgeInsets.all(16),
+                                      itemBuilder: (context, index) =>
+                                          _buildItem(index))
+                                  : _controllerSearchbar.text.isEmpty
+                                      ? const Text('No conversations found')
+                                      : const Text(
+                                          'No matching conversations found'),
+                        )
+                      ]),
+                ),
+              ],
+            ),
+          ]));
+        });
   }
 }

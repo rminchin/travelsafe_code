@@ -1,14 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:travelsafe_v1/helpers/user.dart';
-import 'package:travelsafe_v1/screens/login_signup.dart';
 import 'change_user_details.dart';
+import '../helpers/user.dart';
+import '../screens/login_signup.dart';
+
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings extends StatefulWidget {
   final User user;
-  const Settings(
-      {Key? key, required this.user})
-      : super(key: key);
+  const Settings({Key? key, required this.user}) : super(key: key);
 
   @override
   SettingsState createState() => SettingsState();
@@ -17,7 +16,7 @@ class Settings extends StatefulWidget {
 class SettingsState extends State<Settings> {
   late bool _value;
   SharedPreferences?
-  _preferences; //using shared preferences for 'staying logged in'
+      _preferences; //using shared preferences for 'staying logged in'
 
   @override
   void initState() {
@@ -50,13 +49,14 @@ class SettingsState extends State<Settings> {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => ChangeUserDetails(user: widget.user)));
+            builder: (BuildContext context) =>
+                ChangeUserDetails(user: widget.user)));
   }
 
   updateUserAutoLogin() async {
-    if(_value){
+    if (_value) {
       _preferences?.setString('username', widget.user.username);
-    } else{
+    } else {
       _preferences?.remove('username');
     }
   }
@@ -65,41 +65,39 @@ class SettingsState extends State<Settings> {
   Widget build(BuildContext context) {
     return Scaffold(
         body: Center(
-          child: Column(
-              children: [
-                Text('${widget.user.nickname}\'s settings'),
-                const SizedBox(height: 30),
-                ListTile(
-                  title: const Text("Automatically log in on this device:"),
-                  trailing: Checkbox(
-                    value: _value,
-                    onChanged: (value) {
-                      setState(() {
-                        _value = value!;
-                        updateUserAutoLogin();
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: _changeUserDetails,
-                  child: Text(
-                    'Change User Details',
-                    style: Theme.of(context).textTheme.headline6,
-                  )
-                ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: () => _submitLogout(),
-                  child: Text(
-                    'Log Out',
-                    style: Theme.of(context).textTheme.headline6,
-                  ),
-                )
-              ]
+      child: Column(children: [
+        Text('${widget.user.nickname}\'s settings'),
+        const SizedBox(height: 30),
+        ListTile(
+          title: const Text("Automatically log in on this device:"),
+          trailing: Checkbox(
+            value: _value,
+            onChanged: (value) {
+              if (mounted) {
+                setState(() {
+                  _value = value!;
+                  updateUserAutoLogin();
+                });
+              }
+            },
+          ),
+        ),
+        const SizedBox(height: 30),
+        ElevatedButton(
+            onPressed: _changeUserDetails,
+            child: Text(
+              'Change User Details',
+              style: Theme.of(context).textTheme.headline6,
+            )),
+        const SizedBox(height: 30),
+        ElevatedButton(
+          onPressed: () => _submitLogout(),
+          child: Text(
+            'Log Out',
+            style: Theme.of(context).textTheme.headline6,
           ),
         )
-    );
+      ]),
+    ));
   }
 }

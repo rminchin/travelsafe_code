@@ -1,10 +1,11 @@
-import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:location/location.dart' as loc;
 
+import 'dart:async';
+
 StreamSubscription<loc.LocationData>? locationSubscription;
 StreamSubscription<loc.LocationData>? locationSubscriptionSelf;
-List<Map<String,dynamic>> viewers = [];
+List<Map<String, dynamic>> viewers = [];
 BuildContext context = context;
 List<String> ids = [];
 

@@ -1,13 +1,12 @@
-import 'package:location/location.dart' as loc;
 import '../helpers/database_helper.dart';
 import '../helpers/notification_handler.dart';
 import '../helpers/user.dart';
 import '../maps/draw_map.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'package:flutter/material.dart';
-
 import '../screens/homepage.dart';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:location/location.dart' as loc;
+import 'package:flutter/material.dart';
 
 class OpenChat extends StatefulWidget {
   final User user;
@@ -51,7 +50,8 @@ class OpenChatState extends State<OpenChat> {
             Navigator.pushAndRemoveUntil<void>(
               context,
               MaterialPageRoute<void>(
-                  builder: (BuildContext context) => DrawMap(username: widget.user2.username, user: widget.user)),
+                  builder: (BuildContext context) => DrawMap(
+                      username: widget.user2.username, user: widget.user)),
               ModalRoute.withName('/'),
             );
           })
@@ -67,26 +67,33 @@ class OpenChatState extends State<OpenChat> {
 
   void _handleSubmitted(String text) async {
     _textController.clear();
-    setState(() {
-      _isComposing = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isComposing = false;
+      });
+    }
     _focusNode.requestFocus();
     await DatabaseHelper.sendMessage(
         widget.user.username, widget.user2.username, text);
     List<Map<String, dynamic>> m =
-    await DatabaseHelper.getMessagesFirebase(_conversationId);
-    setState(() {
-      _messages = m;
-    });
-    Map<String,dynamic> u = await DatabaseHelper.getUserByUsernameFirebase(widget.user2.username);
-    await n.sendNotification([u['tokenId']], widget.user.nickname + " has messaged you!", "New message");
+        await DatabaseHelper.getMessagesFirebase(_conversationId);
+    if (mounted) {
+      setState(() {
+        _messages = m;
+      });
+    }
+    Map<String, dynamic> u =
+        await DatabaseHelper.getUserByUsernameFirebase(widget.user2.username);
+    await n.sendNotification([u['tokenId']],
+        widget.user.nickname + " has messaged you!", "New message");
   }
 
   void _backScreen() {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) => HomePage(user: widget.user, tab: 3)),
+          builder: (BuildContext context) =>
+              HomePage(user: widget.user, tab: 3)),
       ModalRoute.withName('/'),
     );
   }
@@ -102,13 +109,15 @@ class OpenChatState extends State<OpenChat> {
               child: TextField(
                 controller: _textController,
                 onChanged: (text) {
-                  setState(() {
-                    _isComposing = text.isNotEmpty;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _isComposing = text.isNotEmpty;
+                    });
+                  }
                 },
                 onSubmitted: _isComposing ? _handleSubmitted : null,
                 decoration:
-                const InputDecoration.collapsed(hintText: 'Send a message'),
+                    const InputDecoration.collapsed(hintText: 'Send a message'),
                 focusNode: _focusNode,
               ),
             ),
@@ -133,7 +142,7 @@ class OpenChatState extends State<OpenChat> {
 
     int indexToUse = index ~/ 2;
     bool sent =
-    _messages[indexToUse]['from'] == widget.user.username ? true : false;
+        _messages[indexToUse]['from'] == widget.user.username ? true : false;
     if (sent) {
       return _sentMessage(_messages[indexToUse]);
     } else {
@@ -246,78 +255,78 @@ class OpenChatState extends State<OpenChat> {
 
   Future<void> updateMessages() async {
     List<Map<String, dynamic>> m =
-    await DatabaseHelper.getMessagesFirebase(_conversationId);
-    if(mounted){
+        await DatabaseHelper.getMessagesFirebase(_conversationId);
+    if (mounted) {
       setState(() {
         _messages = m;
       });
     }
     await DatabaseHelper.removeMessagesList();
-    bool s =
-    await DatabaseHelper.checkStreamingFirebase(widget.user2.username);
-    if(s && mounted){
+    bool s = await DatabaseHelper.checkStreamingFirebase(widget.user2.username);
+    if (s && mounted) {
       setState(() {
         _streaming = true;
       });
-    } else if (mounted){
+    } else if (mounted) {
       setState(() {
         _streaming = false;
       });
     }
-    if(!_opened){
+    if (!_opened) {
       _opened = true;
-      await DatabaseHelper.markMessagesReadFirebase(_conversationId, widget.user.username);
+      await DatabaseHelper.markMessagesReadFirebase(
+          _conversationId, widget.user.username);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async => false,
-      child: StreamBuilder(
-          stream:
-          FirebaseFirestore.instance.collection('newMessages').snapshots(),
-          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            updateMessages();
-            return Scaffold(
-              appBar: AppBar(
-                centerTitle: true,
-                title: Text("Chatting with " + widget.user2.nickname),
-                leading: BackButton(
-                  color: Colors.white,
-                  onPressed: _backScreen,
+        onWillPop: () async => false,
+        child: StreamBuilder(
+            stream: FirebaseFirestore.instance
+                .collection('newMessages')
+                .snapshots(),
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              updateMessages();
+              return Scaffold(
+                appBar: AppBar(
+                  centerTitle: true,
+                  title: Text("Chatting with " + widget.user2.nickname),
+                  leading: BackButton(
+                    color: Colors.white,
+                    onPressed: _backScreen,
+                  ),
+                  actions: _streaming ? _streamingActions : null,
                 ),
-                actions: _streaming ? _streamingActions : null,
-              ),
-              body: Flex(direction: Axis.vertical, children: [
-                Expanded(
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Flexible(
-                            child: _messages.isNotEmpty
-                                ? ListView.builder(
-                                padding: const EdgeInsets.all(8.0),
-                                reverse: true,
-                                itemCount: _messages.length * 2,
-                                itemBuilder: (context, index) =>
-                                    _buildMessage(index))
-                                : const Text("No messages to show")),
-                      ]),
-                ),
-                Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Container(
-                        decoration:
-                        BoxDecoration(color: Theme.of(context).cardColor),
-                        child: _buildTextComposer()))
-              ]),
-            );
-          })
-    );
+                body: Flex(direction: Axis.vertical, children: [
+                  Expanded(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                              child: _messages.isNotEmpty
+                                  ? ListView.builder(
+                                      padding: const EdgeInsets.all(8.0),
+                                      reverse: true,
+                                      itemCount: _messages.length * 2,
+                                      itemBuilder: (context, index) =>
+                                          _buildMessage(index))
+                                  : const Text("No messages to show")),
+                        ]),
+                  ),
+                  Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                          decoration:
+                              BoxDecoration(color: Theme.of(context).cardColor),
+                          child: _buildTextComposer()))
+                ]),
+              );
+            }));
   }
 }

@@ -1,11 +1,11 @@
-import 'dart:async';
+import 'chat_user.dart';
+import '../helpers/database_helper.dart';
+import '../helpers/user.dart';
+import '../screens/homepage.dart';
 
 import 'package:flutter/material.dart';
-import 'package:travelsafe_v1/helpers/user.dart';
 
-import '../helpers/database_helper.dart';
-import '../screens/homepage.dart';
-import 'chat_user.dart';
+import 'dart:async';
 
 class NewConversationSearch extends StatefulWidget {
   final User user;
@@ -44,7 +44,8 @@ class NewConversationSearchState extends State<NewConversationSearch> {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) => HomePage(user: widget.user, tab: 3)),
+          builder: (BuildContext context) =>
+              HomePage(user: widget.user, tab: 3)),
       ModalRoute.withName('/'),
     );
   }
@@ -59,16 +60,19 @@ class NewConversationSearchState extends State<NewConversationSearch> {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) => OpenChat(user: widget.user, user2: user2Found)),
+          builder: (BuildContext context) =>
+              OpenChat(user: widget.user, user2: user2Found)),
       ModalRoute.withName('/'),
     );
   }
 
   Future<void> findMatchingUsers() async {
     List<Map<String, dynamic>> newConversation = await findResults();
-    setState(() {
-      _results = newConversation;
-    });
+    if (mounted) {
+      setState(() {
+        _results = newConversation;
+      });
+    }
   }
 
   Future<List<Map<String, dynamic>>> findResults() async {
@@ -90,7 +94,8 @@ class NewConversationSearchState extends State<NewConversationSearch> {
       }
     }
     for (Map<String, dynamic> match in r) {
-      if (!users.contains(match['username']) && friends.contains(match['username'])) {
+      if (!users.contains(match['username']) &&
+          friends.contains(match['username'])) {
         newConversation.add(match);
       }
     }

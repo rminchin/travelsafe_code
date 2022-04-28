@@ -1,11 +1,14 @@
-import 'package:travelsafe_v1/helpers/database_helper.dart';
-import 'package:travelsafe_v1/helpers/user.dart';
-import 'package:travelsafe_v1/screens/homepage.dart';
+import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
+import '../helpers/user.dart';
+import '../screens/homepage.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'dart:convert';
 
 class ChangeUserDetails extends StatefulWidget {
   final User user;
@@ -16,6 +19,10 @@ class ChangeUserDetails extends StatefulWidget {
 }
 
 class ChangeDetailsState extends State<ChangeUserDetails> {
+  List<Map<String, dynamic>> _requests = [];
+  List<Map<String, dynamic>> _streams = [];
+  List<Map<String, dynamic>> _chats = [];
+
   @override
   void initState() {
     super.initState();
@@ -46,9 +53,44 @@ class ChangeDetailsState extends State<ChangeUserDetails> {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) => HomePage(user: widget.user, tab: 4)),
+          builder: (BuildContext context) =>
+              HomePage(user: widget.user, tab: 4)),
       ModalRoute.withName('/'),
     );
+  }
+
+  void updateScreen() async {
+    _requests =
+        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+    _streams =
+        await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
+
+    if (_requests.length > globals.requests.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New friend request!"),
+      ));
+    }
+
+    if (_streams.length > globals.streams.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New livestream started!"),
+      ));
+    }
+
+    if (_chats.length > globals.unread.length) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New message received!"),
+      ));
+    }
+
+    if (mounted) {
+      setState(() {
+        globals.requests = _requests;
+        globals.streams = _streams;
+        globals.unread = _chats;
+      });
+    }
   }
 
   @override
@@ -58,45 +100,56 @@ class ChangeDetailsState extends State<ChangeUserDetails> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(centerTitle: true,
-            title: const Text("TravelSafe"),
-        leading: BackButton(
-          color: Colors.white,
-          onPressed: _backScreen,
-        )),
-        body: Center(
-          child: Column(children: [
-            const Text('Change user details:'),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _newUsername,
-              child: Text(
-                'Change username',
-                style: Theme.of(context).textTheme.headline6,
-              ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _newPassword,
-              child: Text(
-                'Change password',
-                style: Theme.of(context).textTheme.headline6,
-              ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _newNickname,
-              child: Text(
-                'Change nickname',
-                style: Theme.of(context).textTheme.headline6,
-              ),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-          ]),
-        ));
+    return StreamBuilder(
+        stream: FirebaseFirestore.instance
+            .collection('allNotifications')
+            .snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          updateScreen();
+          return Scaffold(
+              appBar: AppBar(
+                  centerTitle: true,
+                  title: const Text("TravelSafe"),
+                  leading: BackButton(
+                    color: Colors.white,
+                    onPressed: _backScreen,
+                  )),
+              body: Center(
+                child: Column(children: [
+                  const Text('Change user details:'),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: _newUsername,
+                    child: Text(
+                      'Change username',
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: _newPassword,
+                    child: Text(
+                      'Change password',
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: _newNickname,
+                    child: Text(
+                      'Change nickname',
+                      style: Theme.of(context).textTheme.headline6,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                ]),
+              ));
+        });
   }
 }
 
@@ -133,7 +186,7 @@ class NewUsernameState extends State<NewUsername> {
   List<Map<String, dynamic>> _users = [];
 
   SharedPreferences?
-  _preferences; //using shared preferences for 'staying logged in'
+      _preferences; //using shared preferences for 'staying logged in'
 
   @override
   void initState() {
@@ -150,9 +203,11 @@ class NewUsernameState extends State<NewUsername> {
 
   void _refreshUsers() async {
     final data = await DatabaseHelper.getUsersFirebase();
-    setState(() {
-      _users = data;
-    });
+    if (mounted) {
+      setState(() {
+        _users = data;
+      });
+    }
   }
 
   void _submitChanges() async {
@@ -161,18 +216,20 @@ class NewUsernameState extends State<NewUsername> {
       var password = widget.user.password;
       var nickname = widget.user.nickname;
       try {
-        await DatabaseHelper.updateUserFirebase(widget.user.username, username, password, nickname);
+        await DatabaseHelper.updateUserFirebase(
+            widget.user.username, username, password, nickname);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Successfully updated username!'),
         ));
         _refreshUsers();
-        if(_preferences?.getString('username') == widget.user.username){
+        if (_preferences?.getString('username') == widget.user.username) {
           _preferences?.setString('username', username);
         }
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(user: User(username, password, nickname), tab: 4)),
+              builder: (BuildContext context) =>
+                  HomePage(user: User(username, password, nickname), tab: 4)),
           ModalRoute.withName('/'),
         );
       } catch (e) {
@@ -186,9 +243,11 @@ class NewUsernameState extends State<NewUsername> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Invalid information entered, please try again'),
       ));
-      setState(() {
-        _usernameNew = _controllerUsernameEdit.text;
-      });
+      if (mounted) {
+        setState(() {
+          _usernameNew = _controllerUsernameEdit.text;
+        });
+      }
     }
   }
 
@@ -257,9 +316,11 @@ class NewUsernameState extends State<NewUsername> {
               }
             },
             onChanged: (value) {
-              setState(() {
-                _usernameNew = _controllerUsernameEdit.text;
-              });
+              if (mounted) {
+                setState(() {
+                  _usernameNew = _controllerUsernameEdit.text;
+                });
+              }
             },
           ),
           ElevatedButton(
@@ -297,16 +358,20 @@ class NewPasswordState extends State<NewPassword> {
 
   bool _showPasswordEditNew = false;
   void _toggleVisibilityEditNew() {
-    setState(() {
-      _showPasswordEditNew = !_showPasswordEditNew;
-    });
+    if (mounted) {
+      setState(() {
+        _showPasswordEditNew = !_showPasswordEditNew;
+      });
+    }
   }
 
   bool _showPasswordEditOld = false;
   void _toggleVisibilityEditOld() {
-    setState(() {
-      _showPasswordEditOld = !_showPasswordEditOld;
-    });
+    if (mounted) {
+      setState(() {
+        _showPasswordEditOld = !_showPasswordEditOld;
+      });
+    }
   }
 
   void _submitChanges() async {
@@ -328,7 +393,8 @@ class NewPasswordState extends State<NewPassword> {
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(user: User(username, digest.toString(), nickname), tab: 4)),
+              builder: (BuildContext context) => HomePage(
+                  user: User(username, digest.toString(), nickname), tab: 4)),
           ModalRoute.withName('/'),
         );
       } catch (e) {
@@ -343,10 +409,12 @@ class NewPasswordState extends State<NewPassword> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Invalid information entered, please try again'),
       ));
-      setState(() {
-        _passwordOld = _controllerPasswordOld.text;
-        _passwordNew = _controllerPasswordNew.text;
-      });
+      if (mounted) {
+        setState(() {
+          _passwordOld = _controllerPasswordOld.text;
+          _passwordNew = _controllerPasswordNew.text;
+        });
+      }
     }
   }
 
@@ -359,9 +427,9 @@ class NewPasswordState extends State<NewPassword> {
       return 'Must contain at least one number';
     } else if (!text.contains(RegExp(r'[!@#\$&*~]')) && text.isNotEmpty) {
       return 'Must contain at least one special character';
-    } else if(await passwordMatches() == false){
+    } else if (await passwordMatches() == false) {
       return 'Incorrect password entered';
-    } else{
+    } else {
       return 'check';
     }
   }
@@ -375,7 +443,7 @@ class NewPasswordState extends State<NewPassword> {
       return 'New password must contain at least one number';
     } else if (!text.contains(RegExp(r'[!@#\$&*~]')) && text.isNotEmpty) {
       return 'New password must contain at least one special character';
-    } else{
+    } else {
       return 'check';
     }
   }
@@ -392,11 +460,11 @@ class NewPasswordState extends State<NewPassword> {
     var digest = sha256.convert(bytes); //hash password input
 
     _user =
-    await DatabaseHelper.getUserByUsernameFirebase(widget.user.username);
+        await DatabaseHelper.getUserByUsernameFirebase(widget.user.username);
     try {
       if (_user['password'] == digest.toString()) {
         return true;
-      } else{
+      } else {
         return false;
       }
     } catch (e) {
@@ -442,12 +510,15 @@ class NewPasswordState extends State<NewPassword> {
                 return null;
               }
             },
-            onChanged: (value) async{
-              final text2 = await returnMessageEdit(_controllerPasswordOld.text);
-              setState(() {
-                _text2 = text2;
-                _passwordOld = _controllerPasswordOld.text;
-              });
+            onChanged: (value) async {
+              final text2 =
+                  await returnMessageEdit(_controllerPasswordOld.text);
+              if (mounted) {
+                setState(() {
+                  _text2 = text2;
+                  _passwordOld = _controllerPasswordOld.text;
+                });
+              }
             },
           ),
           const SizedBox(height: 30),
@@ -473,9 +544,11 @@ class NewPasswordState extends State<NewPassword> {
               }
             },
             onChanged: (value) {
-              setState(() {
-                _passwordNew = _controllerPasswordNew.text;
-              });
+              if (mounted) {
+                setState(() {
+                  _passwordNew = _controllerPasswordNew.text;
+                });
+              }
             },
           ),
           ElevatedButton(
@@ -488,9 +561,10 @@ class NewPasswordState extends State<NewPassword> {
               style: Theme.of(context).textTheme.headline6,
             ),
             style: ButtonStyle(
-              backgroundColor: isValidChange(_passwordOld) && isValidChange(_passwordNew)
-                  ? MaterialStateProperty.all<Color>(Colors.blueAccent)
-                  : MaterialStateProperty.all<Color>(Colors.grey),
+              backgroundColor:
+                  isValidChange(_passwordOld) && isValidChange(_passwordNew)
+                      ? MaterialStateProperty.all<Color>(Colors.blueAccent)
+                      : MaterialStateProperty.all<Color>(Colors.grey),
             ),
           ),
         ])));
@@ -515,14 +589,16 @@ class NewNicknameState extends State<NewNickname> {
       var nickname = _controllerNicknameEdit.text;
 
       try {
-        await DatabaseHelper.updateUserFirebase(username, username, password, nickname);
+        await DatabaseHelper.updateUserFirebase(
+            username, username, password, nickname);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Successfully updated nickname!'),
         ));
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(user: User(username, password, nickname), tab: 4)),
+              builder: (BuildContext context) =>
+                  HomePage(user: User(username, password, nickname), tab: 4)),
           ModalRoute.withName('/'),
         );
       } catch (e) {
@@ -536,9 +612,11 @@ class NewNicknameState extends State<NewNickname> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Invalid information entered, please try again'),
       ));
-      setState(() {
-        _nicknameNew = _controllerNicknameEdit.text;
-      });
+      if (mounted) {
+        setState(() {
+          _nicknameNew = _controllerNicknameEdit.text;
+        });
+      }
     }
   }
 
@@ -588,9 +666,11 @@ class NewNicknameState extends State<NewNickname> {
               }
             },
             onChanged: (value) {
-              setState(() {
-                _nicknameNew = _controllerNicknameEdit.text;
-              });
+              if (mounted) {
+                setState(() {
+                  _nicknameNew = _controllerNicknameEdit.text;
+                });
+              }
             },
           ),
           const SizedBox(height: 30),
