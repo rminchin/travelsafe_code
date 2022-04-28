@@ -1,15 +1,16 @@
 import 'dart:async';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:travelsafe_v1/helpers/database_helper.dart';
 import 'package:travelsafe_v1/helpers/user.dart';
 import 'package:travelsafe_v1/emergency/emergency.dart';
-import 'package:travelsafe_v1/settings/settings.dart';
+import 'package:travelsafe_v1/settings/settings.dart' as my_settings;
 import 'package:travelsafe_v1/network/network_screen.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import '../chat/chat_general_screen.dart';
 import '../network/network_functionality.dart';
 import '../maps/map.dart';
+import '../helpers/globals.dart' as globals;
 
 class HomePage extends StatefulWidget {
   final User user;
@@ -31,7 +32,7 @@ class HomePageState extends State<HomePage>
 
   List<Map<String, dynamic>> _requests = [];
   List<Map<String, dynamic>> _streams = [];
-  bool _chats = false;
+  List<Map<String, dynamic>> _chats = [];
 
   @override
   void initState() {
@@ -89,6 +90,7 @@ class HomePageState extends State<HomePage>
   }
 
   Future<void> initializePreference() async {
+    await DatabaseHelper.getConversationsFirebase(widget.user.username);
     updateScreen();
   }
 
@@ -118,6 +120,11 @@ class HomePageState extends State<HomePage>
           ]),
         );
       });
+    } else{
+      setState(() {
+        _network = const BottomNavigationBarItem(
+            icon: Icon(Icons.people_rounded), label: 'Network');
+      });
     }
 
     if (_streams.isNotEmpty) {
@@ -135,9 +142,14 @@ class HomePageState extends State<HomePage>
           ]),
         );
       });
+    } else{
+      setState(() {
+        _map = const BottomNavigationBarItem(
+            icon: Icon(Icons.location_on_sharp), label: 'Map');
+      });
     }
 
-    if(_chats) {
+    if(_chats.isNotEmpty) {
       setState(() {
         _chat = BottomNavigationBarItem(
           label: 'Chat',
@@ -152,12 +164,40 @@ class HomePageState extends State<HomePage>
           ]),
         );
       });
+    } else{
+      setState(() {
+        _chat = const BottomNavigationBarItem(
+            icon: Icon(Icons.question_answer_rounded), label: 'Chat');
+      });
     }
+
+    if(_requests.length > globals.requests.length){
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New friend request!"),
+      ));
+    }
+
+    if(_streams.length > globals.streams.length){
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New livestream started!"),
+      ));
+    }
+
+    if(_chats.length > globals.unread.length){
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("New message received!"),
+      ));
+    }
+
+    setState(() {
+      globals.requests = _requests;
+      globals.streams = _streams;
+      globals.unread = _chats;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    updateScreen();
     Widget widget2 = Container(); // default
     switch (_currentIndex) {
       case 0:
@@ -196,41 +236,52 @@ class HomePageState extends State<HomePage>
         break;
 
       case 4:
-        widget2 = Settings(user: widget.user);
+        widget2 = my_settings.Settings(user: widget.user);
         break;
     }
+
     return WillPopScope(
       onWillPop: () async => false,
-      child: DefaultTabController(
-        length: 5,
-        child: Scaffold(
-          extendBody: true,
-          appBar: AppBar(
-              automaticallyImplyLeading: false,
-              centerTitle: true,
-              title: const Text("TravelSafe")),
-          body: widget2,
-          bottomNavigationBar: BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.blue[700],
-              selectedFontSize: 15,
-              unselectedFontSize: 13,
-              iconSize: 30,
-              currentIndex: _currentIndex,
-              onTap: (newIndex) => setState(() {
-                    _currentIndex = newIndex;
-                  }),
-              items: [
-                _map,
-                _network,
-                const BottomNavigationBarItem(
-                    label: "Home", icon: Icon(Icons.home_rounded)),
-                _chat,
-                const BottomNavigationBarItem(
-                    label: "Settings", icon: Icon(Icons.settings)),
-              ]),
-        ),
-      ),
+      child: StreamBuilder(
+        stream:
+        FirebaseFirestore.instance.collection('allNotifications').snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          updateScreen();
+          return DefaultTabController(
+            length: 5,
+            child: Scaffold(
+              extendBody: true,
+              appBar: AppBar(
+                  automaticallyImplyLeading: false,
+                  centerTitle: true,
+                  title: const Text("TravelSafe")),
+              body: widget2,
+              bottomNavigationBar: BottomNavigationBar(
+                  type: BottomNavigationBarType.fixed,
+                  selectedItemColor: Colors.blue[700],
+                  selectedFontSize: 15,
+                  unselectedFontSize: 13,
+                  iconSize: 30,
+                  currentIndex: _currentIndex,
+                  onTap: (newIndex) =>
+                      setState(() {
+                        _currentIndex = newIndex;
+                      }),
+                  items: [
+                    _map,
+                    _network,
+                    const BottomNavigationBarItem(
+                        label: "Home", icon: Icon(Icons.home_rounded)),
+                    _chat,
+                    const BottomNavigationBarItem(
+                        label: "Settings", icon: Icon(Icons.settings)),
+                  ]),
+            ),
+          );
+        })
     );
   }
 }

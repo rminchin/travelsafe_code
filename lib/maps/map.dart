@@ -215,6 +215,7 @@ class MapGenerateState extends State<MapGenerate> {
   Future<void> _listenLocation() async {
     await _getLocation();
     List<Map<String, dynamic>> f = await DatabaseHelper.getFriendsFirebase(widget.user.username);
+    await DatabaseHelper.startStreamFirebase(widget.user.username);
     List<String> usernames = [];
     List<String> tokens = [];
     for(Map<String,dynamic> m in f){
