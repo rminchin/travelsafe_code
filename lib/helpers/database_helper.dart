@@ -564,6 +564,38 @@ class DatabaseHelper {
     throw const FormatException();
   }
 
+  static Future<bool> isEmergencyNumberSavedFirebase(String username) async {
+    var emergency = FirebaseFirestore.instance.collection('emergency');
+    var querySnapshot = await emergency.get();
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == username) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  static Future<String> getEmergencyNumberFirebase(String username) async {
+    var emergency = FirebaseFirestore.instance.collection('emergency');
+    var querySnapshot = await emergency.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (doc.id == username) {
+        return data['number'];
+      }
+    }
+
+    throw const FormatException();
+  }
+
+  static Future<void> setEmergencyNumberFirebase(
+      String username, String number, String code, String mode) async {
+    var emergency = FirebaseFirestore.instance.collection('emergency');
+    return emergency
+        .doc(username)
+        .set({'number': number, 'code': code, 'mode': mode});
+  }
+
   static Future<bool> checkLive(String username) async {
     var location = FirebaseFirestore.instance.collection('location');
     var querySnapshot = await location.get();
@@ -691,6 +723,18 @@ class DatabaseHelper {
           });
         }
       }
+
+      var emergency = FirebaseFirestore.instance.collection('emergency');
+      querySnapshot = await emergency.get();
+      for (var doc in querySnapshot.docs) {
+        Map<String, dynamic> data = doc.data();
+        emergency.doc(username).set({
+          'number': data['number'],
+          'code': data['code'],
+          'mode': data['mode']
+        });
+        emergency.doc(old).delete();
+      }
     } else {
       Map<String, dynamic> user = await getUserByUsernameFirebase(old);
       String oldNick = user['nickname'];
@@ -762,6 +806,43 @@ class DatabaseHelper {
   }
 
   static Future<void> deleteUserFirebase(String username) async {
+    var conversations = FirebaseFirestore.instance.collection('conversations');
+    var query = await conversations.get();
+    for (var doc in query.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['username1'] == username || data['username2'] == username) {
+        conversations.doc(doc.id).delete();
+      }
+    }
+
+    var friends = FirebaseFirestore.instance.collection('friends');
+    var querySnapshot = await friends.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['user1'] == username || data['user2'] == username) {
+        friends.doc(doc.id).delete();
+      }
+    }
+
+    var requests = FirebaseFirestore.instance.collection('requests');
+    querySnapshot = await requests.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['to'] == username || data['from'] == username) {
+        requests.doc(doc.id).delete();
+      }
+    }
+
+    var emergency = FirebaseFirestore.instance.collection('emergency');
+    querySnapshot = await emergency.get();
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == username) {
+        emergency.doc(username).delete();
+      }
+    }
+
+    globals.user = User('', '', '');
+
     final collection = FirebaseFirestore.instance.collection('users');
     String id = await getIDFirebase(username);
     collection
