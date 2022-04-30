@@ -1,4 +1,5 @@
 import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
 import '../helpers/notification_handler.dart';
 import '../helpers/user.dart';
 import '../maps/draw_map.dart';
@@ -9,10 +10,8 @@ import 'package:location/location.dart' as loc;
 import 'package:flutter/material.dart';
 
 class OpenChat extends StatefulWidget {
-  final User user;
   final User user2;
-  const OpenChat({Key? key, required this.user, required this.user2})
-      : super(key: key);
+  const OpenChat({Key? key, required this.user2}) : super(key: key);
 
   @override
   OpenChatState createState() => OpenChatState();
@@ -41,7 +40,7 @@ class OpenChatState extends State<OpenChat> {
   Future<void> initializePreference() async {
     n = NotificationHandler();
     _conversationId = await DatabaseHelper.findConversation(
-        widget.user.username, widget.user2.username);
+        globals.user.username, widget.user2.username);
     _messages = await DatabaseHelper.getMessagesFirebase(_conversationId);
     _streamingActions = [
       IconButton(
@@ -50,8 +49,8 @@ class OpenChatState extends State<OpenChat> {
             Navigator.pushAndRemoveUntil<void>(
               context,
               MaterialPageRoute<void>(
-                  builder: (BuildContext context) => DrawMap(
-                      username: widget.user2.username, user: widget.user)),
+                  builder: (BuildContext context) =>
+                      DrawMap(username: widget.user2.username)),
               ModalRoute.withName('/'),
             );
           })
@@ -74,7 +73,7 @@ class OpenChatState extends State<OpenChat> {
     }
     _focusNode.requestFocus();
     await DatabaseHelper.sendMessage(
-        widget.user.username, widget.user2.username, text);
+        globals.user.username, widget.user2.username, text);
     List<Map<String, dynamic>> m =
         await DatabaseHelper.getMessagesFirebase(_conversationId);
     if (mounted) {
@@ -85,15 +84,14 @@ class OpenChatState extends State<OpenChat> {
     Map<String, dynamic> u =
         await DatabaseHelper.getUserByUsernameFirebase(widget.user2.username);
     await n.sendNotification([u['tokenId']],
-        widget.user.nickname + " has messaged you!", "New message");
+        globals.user.nickname + " has messaged you!", "New message");
   }
 
   void _backScreen() {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) =>
-              HomePage(user: widget.user, tab: 3)),
+          builder: (BuildContext context) => const HomePage(tab: 3)),
       ModalRoute.withName('/'),
     );
   }
@@ -142,7 +140,7 @@ class OpenChatState extends State<OpenChat> {
 
     int indexToUse = index ~/ 2;
     bool sent =
-        _messages[indexToUse]['from'] == widget.user.username ? true : false;
+        _messages[indexToUse]['from'] == globals.user.username ? true : false;
     if (sent) {
       return _sentMessage(_messages[indexToUse]);
     } else {
@@ -275,7 +273,7 @@ class OpenChatState extends State<OpenChat> {
     if (!_opened) {
       _opened = true;
       await DatabaseHelper.markMessagesReadFirebase(
-          _conversationId, widget.user.username);
+          _conversationId, globals.user.username);
     }
   }
 

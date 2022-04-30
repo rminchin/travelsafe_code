@@ -1,15 +1,13 @@
 import 'network_functionality.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/globals.dart' as globals;
-import '../helpers/user.dart';
 
 import 'package:badges/badges.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class Network extends StatefulWidget {
-  final User user;
-  const Network({Key? key, required this.user}) : super(key: key);
+  const Network({Key? key}) : super(key: key);
 
   @override
   NetworkState createState() => NetworkState();
@@ -30,38 +28,36 @@ class NetworkState extends State<Network> {
 
   Future<void> initializePreference() async {
     _requests =
-        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
   }
 
   _addFriend() async {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => AddFriend(user: widget.user)));
+            builder: (BuildContext context) => const AddFriend()));
   }
 
   _viewRequests() async {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                ViewRequests(user: widget.user)));
+            builder: (BuildContext context) => const ViewRequests()));
   }
 
   void _manageNetwork() {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                ManageNetwork(user: widget.user)));
+            builder: (BuildContext context) => const ManageNetwork()));
   }
 
   void updateScreen() async {
     _requests =
-        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
     _streams =
-        await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
-    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
+        await DatabaseHelper.getLiveStreamsFirebase(globals.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(globals.user.username);
 
     if (_requests.length > globals.requests.length) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -104,7 +100,7 @@ class NetworkState extends State<Network> {
           return Scaffold(
               body: Center(
             child: Column(children: [
-              Text('${widget.user.nickname}\'s network'),
+              Text('${globals.user.nickname}\'s network'),
               const SizedBox(height: 30),
               ElevatedButton(
                   onPressed: _addFriend,

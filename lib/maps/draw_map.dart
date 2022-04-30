@@ -1,5 +1,6 @@
 import '../chat/chat_user.dart';
 import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
 import '../helpers/user.dart';
 import '../screens/homepage.dart';
 
@@ -9,10 +10,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
 
 class DrawMap extends StatefulWidget {
-  String username;
-  User user;
-  DrawMap({Key? key, required this.username, required this.user})
-      : super(key: key);
+  final String username;
+  const DrawMap({Key? key, required this.username}) : super(key: key);
 
   @override
   DrawMapState createState() => DrawMapState();
@@ -35,7 +34,7 @@ class DrawMapState extends State<DrawMap> {
 
   Future<void> initializePreference() async {
     await DatabaseHelper.addViewerFirebase(
-        widget.username, widget.user.username);
+        widget.username, globals.user.username);
   }
 
   @override
@@ -49,7 +48,7 @@ class DrawMapState extends State<DrawMap> {
               if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               } else {
-                mymap(snapshot);
+                myMap(snapshot);
               }
             }
             if (!snapshot.hasData) {
@@ -68,7 +67,7 @@ class DrawMapState extends State<DrawMap> {
                         icon: const Icon(Icons.question_answer_rounded),
                         onPressed: () async {
                           await DatabaseHelper.removeViewerFirebase(
-                              widget.username, widget.user.username);
+                              widget.username, globals.user.username);
                           Map<String, dynamic> userFound =
                               await DatabaseHelper.getUserByUsernameFirebase(
                                   widget.username);
@@ -78,7 +77,7 @@ class DrawMapState extends State<DrawMap> {
                             context,
                             MaterialPageRoute<void>(
                                 builder: (BuildContext context) =>
-                                    OpenChat(user: widget.user, user2: user2)),
+                                    OpenChat(user2: user2)),
                             ModalRoute.withName('/'),
                           );
                         },
@@ -108,7 +107,7 @@ class DrawMapState extends State<DrawMap> {
         ));
   }
 
-  Future<void> mymap(AsyncSnapshot<QuerySnapshot> snapshot) async {
+  Future<void> myMap(AsyncSnapshot<QuerySnapshot> snapshot) async {
     try {
       if (snapshot.data!.docs.isNotEmpty) {
         double zoom = await _controller.getZoomLevel();
@@ -159,20 +158,18 @@ class DrawMapState extends State<DrawMap> {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) =>
-              HomePage(user: widget.user, tab: 0)),
+          builder: (BuildContext context) => const HomePage(tab: 0)),
       ModalRoute.withName('/'),
     );
   }
 
   Future<void> _backScreenStoppedWatching() async {
     await DatabaseHelper.removeViewerFirebase(
-        widget.username, widget.user.username);
+        widget.username, globals.user.username);
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) =>
-              HomePage(user: widget.user, tab: 0)),
+          builder: (BuildContext context) => const HomePage(tab: 0)),
       ModalRoute.withName('/'),
     );
   }

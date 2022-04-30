@@ -3,7 +3,6 @@ import 'draw_map_self.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/globals.dart' as globals;
 import '../helpers/notification_handler.dart';
-import '../helpers/user.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 
 class MapGenerate extends StatefulWidget {
-  User user;
-  MapGenerate({Key? key, required this.user}) : super(key: key);
+  const MapGenerate({Key? key}) : super(key: key);
 
   @override
   MapGenerateState createState() => MapGenerateState();
@@ -66,7 +64,7 @@ class MapGenerateState extends State<MapGenerate> {
 
   Future<void> initializePreference() async {
     bool check2 =
-        await DatabaseHelper.checkStreamingFirebase(widget.user.username);
+        await DatabaseHelper.checkStreamingFirebase(globals.user.username);
     if (check2) {
       if (mounted) {
         setState(() {
@@ -74,9 +72,9 @@ class MapGenerateState extends State<MapGenerate> {
         });
       }
     }
-    _friends = await DatabaseHelper.getFriendsFirebase(widget.user.username);
+    _friends = await DatabaseHelper.getFriendsFirebase(globals.user.username);
     globals.viewers =
-        await DatabaseHelper.getViewersFirebase(widget.user.username);
+        await DatabaseHelper.getViewersFirebase(globals.user.username);
     bool check = await DatabaseHelper.findStreamFirebase();
     if (check) {
       String u = await DatabaseHelper.getUsernameStreamFirebase();
@@ -91,10 +89,10 @@ class MapGenerateState extends State<MapGenerate> {
 
   void updateScreen() async {
     _requests =
-        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
     _streams =
-        await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
-    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
+        await DatabaseHelper.getLiveStreamsFirebase(globals.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(globals.user.username);
 
     if (_requests.length > globals.requests.length) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -128,7 +126,7 @@ class MapGenerateState extends State<MapGenerate> {
     return Scaffold(
       body: Column(
         children: [
-          Text('${widget.user.nickname}\'s map'),
+          Text('${globals.user.nickname}\'s map'),
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: _streaming ? _stopListeningLocation : _listenLocation,
@@ -168,7 +166,7 @@ class MapGenerateState extends State<MapGenerate> {
 
   void updateViewers() async {
     List<Map<String, dynamic>> viewers =
-        await DatabaseHelper.getViewersFirebase(widget.user.username);
+        await DatabaseHelper.getViewersFirebase(globals.user.username);
     if (viewers.length != globals.viewers.length) {
       if (viewers.length > globals.viewers.length) {
         for (Map<String, dynamic> m in viewers) {
@@ -200,7 +198,7 @@ class MapGenerateState extends State<MapGenerate> {
     List<dynamic> itemsList = [];
     List<String> names = [];
     for (Map<String, dynamic> n in _friends) {
-      n['user1'] == widget.user.username
+      n['user1'] == globals.user.username
           ? names.add(n['user2'])
           : names.add(n['user1']);
     }
@@ -227,8 +225,8 @@ class MapGenerateState extends State<MapGenerate> {
               icon: const Icon(Icons.directions),
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => DrawMap(
-                        username: itemsList[index].id, user: widget.user)));
+                    builder: (context) =>
+                        DrawMap(username: itemsList[index].id)));
               },
             ),
           );
@@ -238,13 +236,13 @@ class MapGenerateState extends State<MapGenerate> {
   _getLocation() async {
     final loc.LocationData _locationResult = await location.getLocation();
     await DatabaseHelper.addLocation(
-        _locationResult, widget.user.username, widget.user.nickname);
+        _locationResult, globals.user.username, globals.user.nickname);
   }
 
   _getLocationSelf() async {
     final loc.LocationData _locationResult = await location.getLocation();
     await DatabaseHelper.addLocationSelf(
-        _locationResult, widget.user.username, widget.user.nickname);
+        _locationResult, globals.user.username, globals.user.nickname);
   }
 
   _showLocation() async {
@@ -257,29 +255,29 @@ class MapGenerateState extends State<MapGenerate> {
           _locationSubscriptionSelf = null;
         });
       }
-    }).listen((loc.LocationData currentlocation) async {
+    }).listen((loc.LocationData locationCurrent) async {
       await DatabaseHelper.addLocationSelf(
-          currentlocation, widget.user.username, widget.user.nickname);
+          locationCurrent, globals.user.username, globals.user.nickname);
     });
     if (mounted) {
       setState(() {
         globals.locationSubscriptionSelf = _locationSubscriptionSelf;
       });
     }
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => DrawMapSelf(user: widget.user)));
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => const DrawMapSelf()));
   }
 
   Future<void> _listenLocation() async {
     await _getLocation();
     List<Map<String, dynamic>> f =
-        await DatabaseHelper.getFriendsFirebase(widget.user.username);
-    await DatabaseHelper.startStreamFirebase(widget.user.username);
+        await DatabaseHelper.getFriendsFirebase(globals.user.username);
+    await DatabaseHelper.startStreamFirebase(globals.user.username);
     List<String> usernames = [];
     List<String> tokens = [];
     for (Map<String, dynamic> m in f) {
       usernames
-          .add(m['user1'] == widget.user.username ? m['user2'] : m['user1']);
+          .add(m['user1'] == globals.user.username ? m['user2'] : m['user1']);
     }
     for (String u in usernames) {
       Map<String, dynamic> user =
@@ -287,7 +285,7 @@ class MapGenerateState extends State<MapGenerate> {
       tokens.add(user['tokenId']);
     }
     await n.sendNotification(tokens,
-        widget.user.username + " has begun streaming!", "New location stream");
+        globals.user.username + " has begun streaming!", "New location stream");
     _locationSubscription = location.onLocationChanged.handleError((onError) {
       _locationSubscription?.cancel();
       if (mounted) {
@@ -295,7 +293,7 @@ class MapGenerateState extends State<MapGenerate> {
           _locationSubscription = null;
         });
       }
-    }).listen((loc.LocationData currentlocation) async {
+    }).listen((loc.LocationData locationCurrent) async {
       if (!_streaming) {
         if (mounted) {
           setState(() {
@@ -304,10 +302,10 @@ class MapGenerateState extends State<MapGenerate> {
         }
       }
       await DatabaseHelper.addLocation(
-          currentlocation, widget.user.username, widget.user.nickname);
+          locationCurrent, globals.user.username, globals.user.nickname);
     });
     List<Map<String, dynamic>> viewers =
-        await DatabaseHelper.getViewersFirebase(widget.user.username);
+        await DatabaseHelper.getViewersFirebase(globals.user.username);
     if (mounted) {
       setState(() {
         globals.locationSubscription = _locationSubscription;
@@ -319,7 +317,7 @@ class MapGenerateState extends State<MapGenerate> {
   _stopListeningLocation() async {
     _locationSubscription?.cancel();
     globals.locationSubscription?.cancel();
-    await DatabaseHelper.removeLocation(widget.user.username);
+    await DatabaseHelper.removeLocation(globals.user.username);
     if (mounted) {
       setState(() {
         _locationSubscription = null;
@@ -332,9 +330,7 @@ class MapGenerateState extends State<MapGenerate> {
 
   _requestPermission() async {
     var status = await Permission.location.request();
-    if (status.isGranted) {
-      print('done');
-    } else if (status.isDenied) {
+    if (status.isDenied) {
       _requestPermission();
     } else if (status.isPermanentlyDenied) {
       openAppSettings();

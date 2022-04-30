@@ -1,5 +1,6 @@
 import 'chat_user.dart';
 import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
 import '../helpers/user.dart';
 import '../screens/homepage.dart';
 
@@ -8,8 +9,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 class NewConversationSearch extends StatefulWidget {
-  final User user;
-  const NewConversationSearch({Key? key, required this.user}) : super(key: key);
+  const NewConversationSearch({Key? key}) : super(key: key);
 
   @override
   NewConversationSearchState createState() => NewConversationSearchState();
@@ -44,15 +44,14 @@ class NewConversationSearchState extends State<NewConversationSearch> {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) =>
-              HomePage(user: widget.user, tab: 3)),
+          builder: (BuildContext context) => const HomePage(tab: 3)),
       ModalRoute.withName('/'),
     );
   }
 
   _openChatScreen(String friendUsername, String friendNickname) async {
-    await DatabaseHelper.addConversation(widget.user.username, friendUsername,
-        widget.user.nickname, friendNickname);
+    await DatabaseHelper.addConversation(globals.user.username, friendUsername,
+        globals.user.nickname, friendNickname);
     Map<String, dynamic> user =
         await DatabaseHelper.getUserByUsernameFirebase(friendUsername);
     User user2Found =
@@ -60,8 +59,7 @@ class NewConversationSearchState extends State<NewConversationSearch> {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) =>
-              OpenChat(user: widget.user, user2: user2Found)),
+          builder: (BuildContext context) => OpenChat(user2: user2Found)),
       ModalRoute.withName('/'),
     );
   }
@@ -77,18 +75,18 @@ class NewConversationSearchState extends State<NewConversationSearch> {
 
   Future<List<Map<String, dynamic>>> findResults() async {
     List<Map<String, dynamic>> r = await DatabaseHelper.findUserFirebase(
-        _controllerSearchbar.text, widget.user.username);
+        _controllerSearchbar.text, globals.user.username);
     List<String> friends =
-        await DatabaseHelper.getFriendsListFirebase(widget.user.username);
+        await DatabaseHelper.getFriendsListFirebase(globals.user.username);
     List<Map<String, dynamic>> conversations =
-        await DatabaseHelper.getConversationsFirebase(widget.user.username);
+        await DatabaseHelper.getConversationsFirebase(globals.user.username);
     List<String> users = [];
     List<Map<String, dynamic>> newConversation = [];
     for (Map<String, dynamic> f in conversations) {
-      if (f['username1'] == widget.user.username &&
+      if (f['username1'] == globals.user.username &&
           friends.contains(f['username2'])) {
         users.add(f['username2']);
-      } else if (f['username2'] == widget.user.username &&
+      } else if (f['username2'] == globals.user.username &&
           friends.contains(f['username1'])) {
         users.add(f['username1']);
       }

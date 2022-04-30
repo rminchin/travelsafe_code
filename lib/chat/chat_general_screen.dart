@@ -10,8 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ChatScreen extends StatefulWidget {
-  final User user;
-  const ChatScreen({Key? key, required this.user}) : super(key: key);
+  const ChatScreen({Key? key}) : super(key: key);
 
   @override
   ChatScreenState createState() => ChatScreenState();
@@ -41,8 +40,8 @@ class ChatScreenState extends State<ChatScreen> {
 
   Future<void> initializePreference() async {
     _conversations =
-        await DatabaseHelper.getConversationsFirebase(widget.user.username);
-    _friends = await DatabaseHelper.getFriendsFirebase(widget.user.username);
+        await DatabaseHelper.getConversationsFirebase(globals.user.username);
+    _friends = await DatabaseHelper.getFriendsFirebase(globals.user.username);
     _unreadIndexes = List<int>.generate(_friends.length, (int index) => 0);
   }
 
@@ -54,7 +53,7 @@ class ChatScreenState extends State<ChatScreen> {
 
   Future<void> findMatchingUsers() async {
     List<Map<String, dynamic>> r = await DatabaseHelper.findUserFirebase(
-        _controllerSearchbar.text, widget.user.username);
+        _controllerSearchbar.text, globals.user.username);
     if (mounted) {
       setState(() {
         _results = r;
@@ -70,21 +69,19 @@ class ChatScreenState extends State<ChatScreen> {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                OpenChat(user: widget.user, user2: user2Found)));
+            builder: (BuildContext context) => OpenChat(user2: user2Found)));
   }
 
   _createConversation() {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                NewConversationSearch(user: widget.user)));
+            builder: (BuildContext context) => const NewConversationSearch()));
   }
 
   void updateMessages(String user2, int index) async {
     String conversationId =
-        await DatabaseHelper.findConversation(widget.user.username, user2);
+        await DatabaseHelper.findConversation(globals.user.username, user2);
     List<Map<String, dynamic>> u =
         await DatabaseHelper.getUnreadFirebase(conversationId, user2);
     if (mounted) {
@@ -96,10 +93,10 @@ class ChatScreenState extends State<ChatScreen> {
 
   void updateScreen() async {
     _requests =
-        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
     _streams =
-        await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
-    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
+        await DatabaseHelper.getLiveStreamsFirebase(globals.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(globals.user.username);
 
     if (_requests.length > globals.requests.length) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -135,11 +132,11 @@ class ChatScreenState extends State<ChatScreen> {
 
     int indexToUse = index ~/ 2;
     String user =
-        _conversations[indexToUse]['username1'] == widget.user.username
+        _conversations[indexToUse]['username1'] == globals.user.username
             ? _conversations[indexToUse]['username2']
             : _conversations[indexToUse]['username1'];
     String nick =
-        _conversations[indexToUse]['nickname1'] == widget.user.nickname
+        _conversations[indexToUse]['nickname1'] == globals.user.nickname
             ? _conversations[indexToUse]['nickname2']
             : _conversations[indexToUse]['nickname1'];
     updateMessages(user, indexToUse);

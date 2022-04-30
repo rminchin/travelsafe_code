@@ -2,7 +2,6 @@ import '../chat/chat_general_screen.dart';
 import '../emergency/emergency.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/globals.dart' as globals;
-import '../helpers/user.dart';
 import '../maps/map.dart';
 import '../network/network_functionality.dart';
 import '../network/network_screen.dart';
@@ -15,10 +14,8 @@ import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'dart:async';
 
 class HomePage extends StatefulWidget {
-  final User user;
   final int tab;
-  const HomePage({Key? key, required this.user, required this.tab})
-      : super(key: key);
+  const HomePage({Key? key, required this.tab}) : super(key: key);
 
   @override
   HomePageState createState() => HomePageState();
@@ -64,32 +61,28 @@ class HomePageState extends State<HomePage>
           Navigator.pushAndRemoveUntil<void>(
             context,
             MaterialPageRoute<void>(
-                builder: (BuildContext context) =>
-                    ViewRequests(user: widget.user)),
+                builder: (BuildContext context) => const ViewRequests()),
             ModalRoute.withName('/'),
           );
         } else if (title == 'New contact added') {
           Navigator.pushAndRemoveUntil<void>(
             context,
             MaterialPageRoute<void>(
-                builder: (BuildContext context) =>
-                    ManageNetwork(user: widget.user)),
+                builder: (BuildContext context) => const ManageNetwork()),
             ModalRoute.withName('/'),
           );
         } else if (title == 'New location stream') {
           Navigator.pushAndRemoveUntil<void>(
             context,
             MaterialPageRoute<void>(
-                builder: (BuildContext context) =>
-                    HomePage(user: widget.user, tab: 0)),
+                builder: (BuildContext context) => const HomePage(tab: 0)),
             ModalRoute.withName('/'),
           );
         } else if (title == 'New message') {
           Navigator.pushAndRemoveUntil<void>(
             context,
             MaterialPageRoute<void>(
-                builder: (BuildContext context) =>
-                    HomePage(user: widget.user, tab: 3)),
+                builder: (BuildContext context) => const HomePage(tab: 3)),
             ModalRoute.withName('/'),
           );
         }
@@ -98,7 +91,7 @@ class HomePageState extends State<HomePage>
   }
 
   Future<void> initializePreference() async {
-    await DatabaseHelper.getConversationsFirebase(widget.user.username);
+    await DatabaseHelper.getConversationsFirebase(globals.user.username);
     updateScreen();
   }
 
@@ -106,15 +99,15 @@ class HomePageState extends State<HomePage>
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => Emergency(user: widget.user)));
+            builder: (BuildContext context) => const Emergency()));
   }
 
   void updateScreen() async {
     _requests =
-        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
     _streams =
-        await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
-    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
+        await DatabaseHelper.getLiveStreamsFirebase(globals.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(globals.user.username);
     if (_requests.isNotEmpty) {
       if (mounted) {
         setState(() {
@@ -225,11 +218,11 @@ class HomePageState extends State<HomePage>
     Widget widget2 = Container(); // default
     switch (_currentIndex) {
       case 0:
-        widget2 = MapGenerate(user: widget.user);
+        widget2 = const MapGenerate();
         break;
 
       case 1:
-        widget2 = Network(user: widget.user);
+        widget2 = const Network();
         break;
 
       case 2:
@@ -238,7 +231,7 @@ class HomePageState extends State<HomePage>
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text('Logged in as ${widget.user.nickname}'),
+                Text('Logged in as ${globals.user.nickname}'),
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: _submitEmergency,
@@ -256,11 +249,11 @@ class HomePageState extends State<HomePage>
         break;
 
       case 3:
-        widget2 = ChatScreen(user: widget.user);
+        widget2 = const ChatScreen();
         break;
 
       case 4:
-        widget2 = my_settings.Settings(user: widget.user);
+        widget2 = const my_settings.Settings();
         break;
     }
 

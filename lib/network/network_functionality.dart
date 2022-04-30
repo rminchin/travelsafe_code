@@ -1,29 +1,26 @@
 import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
 import '../helpers/notification_handler.dart';
-import '../helpers/user.dart';
 import '../screens/homepage.dart';
 
 import 'package:flutter/material.dart';
 
 class AddFriend extends StatefulWidget {
-  User user;
-  AddFriend({Key? key, required this.user}) : super(key: key);
+  const AddFriend({Key? key}) : super(key: key);
 
   @override
   AddFriendState createState() => AddFriendState();
 }
 
 class ViewRequests extends StatefulWidget {
-  User user;
-  ViewRequests({Key? key, required this.user}) : super(key: key);
+  const ViewRequests({Key? key}) : super(key: key);
 
   @override
   ViewRequestsState createState() => ViewRequestsState();
 }
 
 class ManageNetwork extends StatefulWidget {
-  User user;
-  ManageNetwork({Key? key, required this.user}) : super(key: key);
+  const ManageNetwork({Key? key}) : super(key: key);
 
   @override
   ManageNetworkState createState() => ManageNetworkState();
@@ -48,8 +45,8 @@ class AddFriendState extends State<AddFriend> {
   }
 
   Future<void> initializePreference() async {
-    _requests = await DatabaseHelper.getRequestsFirebase(widget.user.username);
-    _friends = await DatabaseHelper.getFriendsFirebase(widget.user.username);
+    _requests = await DatabaseHelper.getRequestsFirebase(globals.user.username);
+    _friends = await DatabaseHelper.getFriendsFirebase(globals.user.username);
   }
 
   @override
@@ -63,13 +60,12 @@ class AddFriendState extends State<AddFriend> {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                HomePage(user: widget.user, tab: 1)));
+            builder: (BuildContext context) => const HomePage(tab: 1)));
   }
 
   Future<void> addFriend(String username) async {
     await DatabaseHelper.sendRequestFirebase(
-        widget.user.username, username, widget.user.nickname);
+        globals.user.username, username, globals.user.nickname);
     Map<String, dynamic> u =
         await DatabaseHelper.getUserByUsernameFirebase(username);
     if (mounted) {
@@ -79,11 +75,11 @@ class AddFriendState extends State<AddFriend> {
     }
     await findMatchingUsers();
     await n.sendNotification([u['tokenId']],
-        widget.user.username + " has added you!", "New contact request");
+        globals.user.username + " has added you!", "New contact request");
   }
 
   Future<void> removeRequest(String username) async {
-    await DatabaseHelper.removeRequestFirebase(widget.user.username, username);
+    await DatabaseHelper.removeRequestFirebase(globals.user.username, username);
     Map<String, dynamic> u =
         await DatabaseHelper.getUserByUsernameFirebase(username);
     if (mounted) {
@@ -96,11 +92,11 @@ class AddFriendState extends State<AddFriend> {
 
   Future<void> findMatchingUsers() async {
     List<Map<String, dynamic>> r = await DatabaseHelper.findUserFirebase(
-        _controllerSearchbar.text, widget.user.username);
+        _controllerSearchbar.text, globals.user.username);
     List<Map<String, dynamic>> requests =
-        await DatabaseHelper.getRequestsFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsFirebase(globals.user.username);
     List<Map<String, dynamic>> friends =
-        await DatabaseHelper.getFriendsFirebase(widget.user.username);
+        await DatabaseHelper.getFriendsFirebase(globals.user.username);
     if (mounted) {
       setState(() {
         _results = r;
@@ -229,20 +225,19 @@ class ViewRequestsState extends State<ViewRequests> {
 
   Future<void> initializePreference() async {
     _results =
-        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
   }
 
   void _backScreen() {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                HomePage(user: widget.user, tab: 1)));
+            builder: (BuildContext context) => const HomePage(tab: 1)));
   }
 
   Future<void> acceptRequest(String username, String nick) async {
     await DatabaseHelper.acceptFriendFirebase(
-        username, widget.user.username, nick, widget.user.nickname);
+        username, globals.user.username, nick, globals.user.nickname);
     Map<String, dynamic> u =
         await DatabaseHelper.getUserByUsernameFirebase(username);
     if (mounted) {
@@ -256,12 +251,12 @@ class ViewRequestsState extends State<ViewRequests> {
     await findMatchingUsers();
     await n.sendNotification(
         [u['tokenId']],
-        widget.user.username + " has accepted your request",
+        globals.user.username + " has accepted your request",
         "New contact added");
   }
 
   Future<void> removeRequest(String username) async {
-    await DatabaseHelper.removeRequestFirebase(username, widget.user.username);
+    await DatabaseHelper.removeRequestFirebase(username, globals.user.username);
     Map<String, dynamic> u =
         await DatabaseHelper.getUserByUsernameFirebase(username);
     if (mounted) {
@@ -277,7 +272,7 @@ class ViewRequestsState extends State<ViewRequests> {
 
   Future<void> findMatchingUsers() async {
     List<Map<String, dynamic>> r =
-        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
     if (mounted) {
       setState(() {
         _results = r;
@@ -355,9 +350,11 @@ class ViewRequestsState extends State<ViewRequests> {
 
 class ManageNetworkState extends State<ManageNetwork> {
   List<Map<String, dynamic>> _friends = [];
+  late bool _check;
 
   @override
   void initState() {
+    _check = false;
     super.initState();
     initializePreference().whenComplete(() {
       setState(() {});
@@ -365,35 +362,42 @@ class ManageNetworkState extends State<ManageNetwork> {
   }
 
   Future<void> initializePreference() async {
-    _friends = await DatabaseHelper.getFriendsFirebase(widget.user.username);
+    _friends = await DatabaseHelper.getFriendsFirebase(globals.user.username);
+    _check = await DatabaseHelper.checkLive(globals.user.username);
   }
 
   void _backScreen() {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                HomePage(user: widget.user, tab: 1)));
+            builder: (BuildContext context) => const HomePage(tab: 1)));
   }
 
   Future<void> removeFriend(String username, String other) async {
-    await DatabaseHelper.removeFriendFirebase(username, other);
-    Map<String, dynamic> u =
-        await DatabaseHelper.getUserByUsernameFirebase(other);
-    if (mounted) {
-      setState(() {
-        _friends.remove(u);
-      });
+    bool check = await DatabaseHelper.checkStreamingFirebase(other);
+    if (check) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text("Can't remove a friend while they are streaming"),
+      ));
+    } else {
+      await DatabaseHelper.removeFriendFirebase(username, other);
+      Map<String, dynamic> u =
+          await DatabaseHelper.getUserByUsernameFirebase(other);
+      if (mounted) {
+        setState(() {
+          _friends.remove(u);
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Friend removed'),
+      ));
+      await findMatchingUsers();
     }
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Friend removed'),
-    ));
-    await findMatchingUsers();
   }
 
   Future<void> findMatchingUsers() async {
     List<Map<String, dynamic>> r =
-        await DatabaseHelper.getFriendsFirebase(widget.user.username);
+        await DatabaseHelper.getFriendsFirebase(globals.user.username);
     if (mounted) {
       setState(() {
         _friends = r;
@@ -407,22 +411,25 @@ class ManageNetworkState extends State<ManageNetwork> {
     }
 
     int indexToUse = index ~/ 2;
-    String user = _friends[indexToUse]['user1'] == widget.user.username
+    String user = _friends[indexToUse]['user1'] == globals.user.username
         ? _friends[indexToUse]['user2']
         : _friends[indexToUse]['user1'];
-    String nick = _friends[indexToUse]['user1_nickname'] == widget.user.nickname
-        ? _friends[indexToUse]['user2_nickname']
-        : _friends[indexToUse]['user1_nickname'];
+    String nick =
+        _friends[indexToUse]['user1_nickname'] == globals.user.nickname
+            ? _friends[indexToUse]['user2_nickname']
+            : _friends[indexToUse]['user1_nickname'];
     String since = _friends[indexToUse]['since'];
     return ListTile(
       leading: Text("Since\n" + since),
       title: Text(nick),
       subtitle: Text(user),
-      trailing: GestureDetector(
-          onTap: () async {
-            await removeFriend(widget.user.username, user);
-          },
-          child: const Icon(Icons.remove_circle, color: Colors.red)),
+      trailing: _check
+          ? null
+          : GestureDetector(
+              onTap: () async {
+                await removeFriend(globals.user.username, user);
+              },
+              child: const Icon(Icons.remove_circle, color: Colors.red)),
     );
   }
 

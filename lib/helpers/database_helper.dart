@@ -564,12 +564,197 @@ class DatabaseHelper {
     throw const FormatException();
   }
 
+  static Future<bool> checkLive(String username) async {
+    var location = FirebaseFirestore.instance.collection('location');
+    var querySnapshot = await location.get();
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == username) {
+        return true;
+      }
+    }
+
+    var locationSelf = FirebaseFirestore.instance.collection('locationSelf');
+    querySnapshot = await locationSelf.get();
+    for (var doc in querySnapshot.docs) {
+      if (doc.id == username) {
+        return true;
+      }
+    }
+
+    var stopped = FirebaseFirestore.instance.collection('stopped');
+    querySnapshot = await stopped.get();
+    if (querySnapshot.size > 0) {
+      return true;
+    }
+
+    var streams = FirebaseFirestore.instance.collection('streams');
+    querySnapshot = await streams.get();
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data();
+      if (data['streamer'] == username || data['viewer'] == username) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   static Future<void> updateUserFirebase(
       String old, String username, String password, String nickname) async {
     CollectionReference users = FirebaseFirestore.instance.collection('users');
-    String id = await getIDFirebase(old);
+    var conversations = FirebaseFirestore.instance.collection('conversations');
+    var query = await conversations.get();
+    if (old != username) {
+      for (var doc in query.docs) {
+        Map<String, dynamic> data = doc.data();
+        if (data['username1'] == old) {
+          conversations.doc(doc.id).update({
+            'nickname1': data['nickname1'],
+            'nickname2': data['nickname2'],
+            'username1': username,
+            'username2': doc['username2']
+          });
+        } else if (data['username2'] == old) {
+          conversations.doc(doc.id).update({
+            'nickname1': data['nickname1'],
+            'nickname2': data['nickname2'],
+            'username1': data['username1'],
+            'username2': username
+          });
+        }
+
+        var messagesFound = FirebaseFirestore.instance
+            .collection('conversations')
+            .doc(doc.id)
+            .collection('messages');
+        var querySnapshot = await messagesFound.get();
+        for (var doc2 in querySnapshot.docs) {
+          Map<String, dynamic> data = doc2.data();
+          if (data['from'] == old) {
+            messagesFound.doc(doc2.id).update({
+              'to': data['to'],
+              'from': username,
+              'at': data['at'],
+              'content': data['content'],
+              'read': data['read']
+            });
+          } else if (data['to'] == old) {
+            messagesFound.doc(doc2.id).update({
+              'to': username,
+              'from': data['from'],
+              'at': data['at'],
+              'content': data['content'],
+              'read': data['read']
+            });
+          }
+        }
+      }
+
+      var friends = FirebaseFirestore.instance.collection('friends');
+      var querySnapshot = await friends.get();
+      for (var doc in querySnapshot.docs) {
+        Map<String, dynamic> data = doc.data();
+        if (data['user1'] == old) {
+          friends.doc(doc.id).update({
+            'user1': username,
+            'user2': data['user2'],
+            'user1_nickname': data['user1_nickname'],
+            'user2_nickname': data['user2_nickname'],
+            'since': data['since']
+          });
+        } else if (data['user2'] == old) {
+          friends.doc(doc.id).update({
+            'user1': data['user1'],
+            'user2': username,
+            'user1_nickname': data['user1_nickname'],
+            'user2_nickname': data['user2_nickname'],
+            'since': data['since']
+          });
+        }
+      }
+
+      var requests = FirebaseFirestore.instance.collection('requests');
+      querySnapshot = await requests.get();
+      for (var doc in querySnapshot.docs) {
+        Map<String, dynamic> data = doc.data();
+        if (data['to'] == old) {
+          requests.doc(doc.id).update({
+            'to': username,
+            'from': data['from'],
+            'from_nickname': data['from_nickname']
+          });
+        } else if (data['from'] == old) {
+          requests.doc(doc.id).update({
+            'to': data['to'],
+            'from': username,
+            'from_nickname': data['from_nickname']
+          });
+        }
+      }
+    } else {
+      Map<String, dynamic> user = await getUserByUsernameFirebase(old);
+      String oldNick = user['nickname'];
+      if (oldNick != nickname) {
+        for (var doc in query.docs) {
+          Map<String, dynamic> data = doc.data();
+          if (data['username1'] == old) {
+            conversations.doc(doc.id).update({
+              'nickname1': nickname,
+              'nickname2': data['nickname2'],
+              'username1': doc['username1'],
+              'username2': doc['username2']
+            });
+          } else {
+            conversations.doc(doc.id).update({
+              'nickname1': data['nickname1'],
+              'nickname2': nickname,
+              'username1': doc['username1'],
+              'username2': doc['username2']
+            });
+          }
+        }
+        var friends = FirebaseFirestore.instance.collection('friends');
+        var querySnapshot = await friends.get();
+        for (var doc in querySnapshot.docs) {
+          Map<String, dynamic> data = doc.data();
+          if (data['user1'] == old) {
+            friends.doc(doc.id).update({
+              'user1': data['user1'],
+              'user2': data['user2'],
+              'user1_nickname': nickname,
+              'user2_nickname': data['user2_nickname'],
+              'since': data['since']
+            });
+          } else if (data['user2'] == old) {
+            friends.doc(doc.id).update({
+              'user1': data['user1'],
+              'user2': data['user2'],
+              'user1_nickname': data['user1_nickname'],
+              'user2_nickname': nickname,
+              'since': data['since']
+            });
+          }
+        }
+
+        var requests = FirebaseFirestore.instance.collection('requests');
+        querySnapshot = await requests.get();
+        for (var doc in querySnapshot.docs) {
+          Map<String, dynamic> data = doc.data();
+          if (data['from'] == old) {
+            requests.doc(doc.id).update({
+              'to': data['to'],
+              'from': data['from'],
+              'from_nickname': nickname
+            });
+          }
+        }
+      }
+    }
+
+    globals.user = User(username, password, nickname);
+    String idToUpdate = await getIDFirebase(old);
     return users
-        .doc(id)
+        .doc(idToUpdate)
         .update(
             {'username': username, 'password': password, 'nickname': nickname})
         .then((value) => print("User Updated"))
@@ -595,6 +780,22 @@ class DatabaseHelper {
         .delete()
         .then((_) => print('Friendship removed'))
         .catchError((error) => print('Removal failed: $error'));
+
+    await removeMessages(username, other);
+  }
+
+  static Future<void> removeMessages(String username, String other) async {
+    String conversationId = await findConversation(username, other);
+
+    final collection = FirebaseFirestore.instance
+        .collection('conversations')
+        .doc(conversationId)
+        .collection('messages');
+    var snapshots = await collection.get();
+    for (var doc in snapshots.docs) {
+      await doc.reference.delete();
+    }
+    collection.doc(conversationId).delete();
   }
 
   static Future<void> sendNotification(String username) async {

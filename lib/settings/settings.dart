@@ -1,4 +1,6 @@
 import 'change_user_details.dart';
+import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
 import '../helpers/user.dart';
 import '../screens/login_signup.dart';
 
@@ -6,8 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Settings extends StatefulWidget {
-  final User user;
-  const Settings({Key? key, required this.user}) : super(key: key);
+  const Settings({Key? key}) : super(key: key);
 
   @override
   SettingsState createState() => SettingsState();
@@ -17,11 +18,13 @@ class SettingsState extends State<Settings> {
   late bool _value;
   SharedPreferences?
       _preferences; //using shared preferences for 'staying logged in'
+  late bool _check;
 
   @override
   void initState() {
     super.initState();
     _value = false;
+    _check = false;
     initializePreference().whenComplete(() {
       setState(() {});
     });
@@ -31,11 +34,14 @@ class SettingsState extends State<Settings> {
     _preferences = await SharedPreferences.getInstance();
     var userFound = _preferences?.getString('username');
     setState(() {
-      _value = userFound != null && userFound == widget.user.username;
+      _value = userFound != null && userFound == globals.user.username;
     });
+
+    _check = await DatabaseHelper.checkLive(globals.user.username);
   }
 
   _submitLogout() async {
+    globals.user = User('', '', '');
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
       content: Text('Successfully logged out'),
     ));
@@ -49,13 +55,12 @@ class SettingsState extends State<Settings> {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                ChangeUserDetails(user: widget.user)));
+            builder: (BuildContext context) => const ChangeUserDetails()));
   }
 
   updateUserAutoLogin() async {
     if (_value) {
-      _preferences?.setString('username', widget.user.username);
+      _preferences?.setString('username', globals.user.username);
     } else {
       _preferences?.remove('username');
     }
@@ -66,7 +71,7 @@ class SettingsState extends State<Settings> {
     return Scaffold(
         body: Center(
       child: Column(children: [
-        Text('${widget.user.nickname}\'s settings'),
+        Text('${globals.user.nickname}\'s settings'),
         const SizedBox(height: 30),
         ListTile(
           title: const Text("Automatically log in on this device:"),
@@ -84,7 +89,7 @@ class SettingsState extends State<Settings> {
         ),
         const SizedBox(height: 30),
         ElevatedButton(
-            onPressed: _changeUserDetails,
+            onPressed: _check ? null : _changeUserDetails,
             child: Text(
               'Change User Details',
               style: Theme.of(context).textTheme.headline6,

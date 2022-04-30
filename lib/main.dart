@@ -1,6 +1,7 @@
 import 'emergency/emergency_no_login.dart';
-import 'helpers/user.dart';
 import 'helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
+import '../helpers/user.dart';
 import 'screens/login_signup.dart';
 import 'screens/homepage.dart';
 
@@ -70,11 +71,11 @@ class _EmergencyOrLoginState extends State<EmergencyOrLogin> {
       String password = _user['password'];
       String nickname = _user['nickname'];
       User userLogin = User(username, password, nickname);
+      globals.user = userLogin;
       Navigator.pushAndRemoveUntil<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) =>
-                HomePage(user: userLogin, tab: 2)),
+            builder: (BuildContext context) => const HomePage(tab: 2)),
         ModalRoute.withName('/'),
       );
     }

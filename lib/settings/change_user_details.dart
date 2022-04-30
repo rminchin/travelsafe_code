@@ -1,6 +1,5 @@
 import '../helpers/database_helper.dart';
 import '../helpers/globals.dart' as globals;
-import '../helpers/user.dart';
 import '../screens/homepage.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -11,8 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class ChangeUserDetails extends StatefulWidget {
-  final User user;
-  const ChangeUserDetails({Key? key, required this.user}) : super(key: key);
+  const ChangeUserDetails({Key? key}) : super(key: key);
 
   @override
   ChangeDetailsState createState() => ChangeDetailsState();
@@ -32,39 +30,38 @@ class ChangeDetailsState extends State<ChangeUserDetails> {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => NewUsername(user: widget.user)));
+            builder: (BuildContext context) => const NewUsername()));
   }
 
   void _newPassword() {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => NewPassword(user: widget.user)));
+            builder: (BuildContext context) => const NewPassword()));
   }
 
   void _newNickname() {
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
-            builder: (BuildContext context) => NewNickname(user: widget.user)));
+            builder: (BuildContext context) => const NewNickname()));
   }
 
   void _backScreen() {
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) =>
-              HomePage(user: widget.user, tab: 4)),
+          builder: (BuildContext context) => const HomePage(tab: 4)),
       ModalRoute.withName('/'),
     );
   }
 
   void updateScreen() async {
     _requests =
-        await DatabaseHelper.getRequestsReceivedFirebase(widget.user.username);
+        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
     _streams =
-        await DatabaseHelper.getLiveStreamsFirebase(widget.user.username);
-    _chats = await DatabaseHelper.getAllUnreadFirebase(widget.user.username);
+        await DatabaseHelper.getLiveStreamsFirebase(globals.user.username);
+    _chats = await DatabaseHelper.getAllUnreadFirebase(globals.user.username);
 
     if (_requests.length > globals.requests.length) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -154,24 +151,21 @@ class ChangeDetailsState extends State<ChangeUserDetails> {
 }
 
 class NewUsername extends StatefulWidget {
-  User user;
-  NewUsername({Key? key, required this.user}) : super(key: key);
+  const NewUsername({Key? key}) : super(key: key);
 
   @override
   NewUsernameState createState() => NewUsernameState();
 }
 
 class NewPassword extends StatefulWidget {
-  User user;
-  NewPassword({Key? key, required this.user}) : super(key: key);
+  const NewPassword({Key? key}) : super(key: key);
 
   @override
   NewPasswordState createState() => NewPasswordState();
 }
 
 class NewNickname extends StatefulWidget {
-  User user;
-  NewNickname({Key? key, required this.user}) : super(key: key);
+  const NewNickname({Key? key}) : super(key: key);
 
   @override
   NewNicknameState createState() => NewNicknameState();
@@ -213,23 +207,22 @@ class NewUsernameState extends State<NewUsername> {
   void _submitChanges() async {
     if (isValidChange(_controllerUsernameEdit.text)) {
       var username = _controllerUsernameEdit.text;
-      var password = widget.user.password;
-      var nickname = widget.user.nickname;
+      var password = globals.user.password;
+      var nickname = globals.user.nickname;
       try {
         await DatabaseHelper.updateUserFirebase(
-            widget.user.username, username, password, nickname);
+            globals.user.username, username, password, nickname);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Successfully updated username!'),
         ));
         _refreshUsers();
-        if (_preferences?.getString('username') == widget.user.username) {
+        if (_preferences?.getString('username') == globals.user.username) {
           _preferences?.setString('username', username);
         }
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) =>
-                  HomePage(user: User(username, password, nickname), tab: 4)),
+              builder: (BuildContext context) => const HomePage(tab: 4)),
           ModalRoute.withName('/'),
         );
       } catch (e) {
@@ -277,7 +270,7 @@ class NewUsernameState extends State<NewUsername> {
     }
 
     if (existingUser == -1 &&
-        _controllerUsernameEdit.text != widget.user.username) {
+        _controllerUsernameEdit.text != globals.user.username) {
       return false;
     } else {
       return true;
@@ -378,8 +371,8 @@ class NewPasswordState extends State<NewPassword> {
     if (isValidChange(_controllerPasswordOld.text) &&
         isValidChange(_controllerPasswordNew.text) &&
         await passwordMatches()) {
-      var username = widget.user.username;
-      var nickname = widget.user.nickname;
+      var username = globals.user.username;
+      var nickname = globals.user.nickname;
 
       var bytes = utf8.encode(_controllerPasswordNew.text);
       var digest = sha256.convert(bytes);
@@ -393,8 +386,7 @@ class NewPasswordState extends State<NewPassword> {
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) => HomePage(
-                  user: User(username, digest.toString(), nickname), tab: 4)),
+              builder: (BuildContext context) => const HomePage(tab: 4)),
           ModalRoute.withName('/'),
         );
       } catch (e) {
@@ -460,7 +452,7 @@ class NewPasswordState extends State<NewPassword> {
     var digest = sha256.convert(bytes); //hash password input
 
     _user =
-        await DatabaseHelper.getUserByUsernameFirebase(widget.user.username);
+        await DatabaseHelper.getUserByUsernameFirebase(globals.user.username);
     try {
       if (_user['password'] == digest.toString()) {
         return true;
@@ -584,8 +576,8 @@ class NewNicknameState extends State<NewNickname> {
 
   void _submitChanges() async {
     if (isValidChange(_controllerNicknameEdit.text)) {
-      var username = widget.user.username;
-      var password = widget.user.password;
+      var username = globals.user.username;
+      var password = globals.user.password;
       var nickname = _controllerNicknameEdit.text;
 
       try {
@@ -597,8 +589,7 @@ class NewNicknameState extends State<NewNickname> {
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) =>
-                  HomePage(user: User(username, password, nickname), tab: 4)),
+              builder: (BuildContext context) => const HomePage(tab: 4)),
           ModalRoute.withName('/'),
         );
       } catch (e) {

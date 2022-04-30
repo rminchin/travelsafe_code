@@ -1,10 +1,9 @@
-import '../helpers/user.dart';
+import '../helpers/globals.dart' as globals;
 
 import 'package:flutter/material.dart';
 
 class Emergency extends StatefulWidget {
-  final User user;
-  const Emergency({Key? key, required this.user}) : super(key: key);
+  const Emergency({Key? key}) : super(key: key);
 
   @override
   EmergencyState createState() => EmergencyState();
@@ -17,7 +16,7 @@ class EmergencyState extends State<Emergency> {
         appBar: AppBar(centerTitle: true, title: const Text("Emergency")),
         body: Center(
           child: Column(children: [
-            Text('Emergency declared - logged in as ${widget.user.nickname}')
+            Text('Emergency declared - logged in as ${globals.user.nickname}')
           ]),
         ));
   }

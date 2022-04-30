@@ -1,6 +1,5 @@
 import '../helpers/database_helper.dart';
 import '../helpers/globals.dart' as globals;
-import '../helpers/user.dart';
 import '../screens/homepage.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,8 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
 
 class DrawMapSelf extends StatefulWidget {
-  User user;
-  DrawMapSelf({Key? key, required this.user}) : super(key: key);
+  const DrawMapSelf({Key? key}) : super(key: key);
 
   @override
   DrawMapSelfState createState() => DrawMapSelfState();
@@ -39,7 +37,7 @@ class DrawMapSelfState extends State<DrawMapSelf> {
               if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               } else {
-                mymap(snapshot);
+                myMap(snapshot);
               }
             }
             if (!snapshot.hasData) {
@@ -77,7 +75,7 @@ class DrawMapSelfState extends State<DrawMapSelf> {
         ));
   }
 
-  Future<void> mymap(AsyncSnapshot<QuerySnapshot> snapshot) async {
+  Future<void> myMap(AsyncSnapshot<QuerySnapshot> snapshot) async {
     double zoom = await _controller.getZoomLevel();
     if (mounted) {
       setState(() {
@@ -89,9 +87,9 @@ class DrawMapSelfState extends State<DrawMapSelf> {
         .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
             target: LatLng(
               snapshot.data!.docs.singleWhere(
-                  (element) => element.id == widget.user.username)['latitude'],
-              snapshot.data!.docs.singleWhere(
-                  (element) => element.id == widget.user.username)['longitude'],
+                  (element) => element.id == globals.user.username)['latitude'],
+              snapshot.data!.docs.singleWhere((element) =>
+                  element.id == globals.user.username)['longitude'],
             ),
             zoom: _zoom)));
   }
@@ -100,9 +98,9 @@ class DrawMapSelfState extends State<DrawMapSelf> {
     LatLng loc = const LatLng(0, 0);
     loc = LatLng(
       snapshot.data!.docs.singleWhere(
-          (element) => element.id == widget.user.username)['latitude'],
+          (element) => element.id == globals.user.username)['latitude'],
       snapshot.data!.docs.singleWhere(
-          (element) => element.id == widget.user.username)['longitude'],
+          (element) => element.id == globals.user.username)['longitude'],
     );
     return loc;
   }
@@ -110,12 +108,11 @@ class DrawMapSelfState extends State<DrawMapSelf> {
   Future<void> _backScreen() async {
     globals.locationSubscriptionSelf?.cancel();
     globals.locationSubscriptionSelf = null;
-    await DatabaseHelper.removeLocationSelf(widget.user.username);
+    await DatabaseHelper.removeLocationSelf(globals.user.username);
     Navigator.pushAndRemoveUntil<void>(
       context,
       MaterialPageRoute<void>(
-          builder: (BuildContext context) =>
-              HomePage(user: widget.user, tab: 0)),
+          builder: (BuildContext context) => const HomePage(tab: 0)),
       ModalRoute.withName('/'),
     );
   }

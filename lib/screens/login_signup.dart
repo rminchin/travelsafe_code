@@ -1,6 +1,7 @@
 import 'homepage.dart';
 import '../main.dart';
 import '../helpers/database_helper.dart';
+import '../helpers/globals.dart' as globals;
 import '../helpers/user.dart';
 
 import 'package:crypto/crypto.dart';
@@ -142,11 +143,11 @@ class _LoginSignUpState extends State<LoginSignUp>
         String password = _controllerPassword.text;
         String nickname = _controllerNickname.text;
         User userLogin = User(username, password, nickname);
+        globals.user = userLogin;
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) =>
-                  HomePage(user: userLogin, tab: 2)),
+              builder: (BuildContext context) => const HomePage(tab: 2)),
           ModalRoute.withName('/'),
         );
       } catch (e) {
@@ -188,11 +189,11 @@ class _LoginSignUpState extends State<LoginSignUp>
         String password = _user['password'];
         String nickname = _user['nickname'];
         User userLogin = User(username, password, nickname);
+        globals.user = userLogin;
         Navigator.pushAndRemoveUntil<void>(
           context,
           MaterialPageRoute<void>(
-              builder: (BuildContext context) =>
-                  HomePage(user: userLogin, tab: 2)),
+              builder: (BuildContext context) => const HomePage(tab: 2)),
           ModalRoute.withName('/'),
         );
       } else {
