@@ -78,7 +78,7 @@ class HomePageState extends State<HomePage>
                 builder: (BuildContext context) => const HomePage(tab: 0)),
             ModalRoute.withName('/'),
           );
-        } else if (title == 'New message') {
+        } else if (title == 'New message' || title == 'New alert') {
           Navigator.pushAndRemoveUntil<void>(
             context,
             MaterialPageRoute<void>(

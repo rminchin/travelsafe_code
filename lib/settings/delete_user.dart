@@ -30,6 +30,9 @@ class DeleteUserState extends State<DeleteUser> {
 
   void _confirm() async {
     await DatabaseHelper.deleteUserFirebase(globals.user.username);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text("Account deleted successfully"),
+    ));
     Navigator.push<void>(
         context,
         MaterialPageRoute<void>(

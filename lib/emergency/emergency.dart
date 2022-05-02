@@ -1,5 +1,6 @@
 import '../helpers/database_helper.dart';
 import '../helpers/globals.dart' as globals;
+import '../helpers/notification_handler.dart';
 import '../screens/homepage.dart';
 
 import 'package:flutter/material.dart';
@@ -18,6 +19,13 @@ class SetEmergencyNumberLogin extends StatefulWidget {
 
   @override
   SetEmergencyNumberLoginState createState() => SetEmergencyNumberLoginState();
+}
+
+class SendAlert extends StatefulWidget {
+  const SendAlert({Key? key}) : super(key: key);
+
+  @override
+  SendAlertState createState() => SendAlertState();
 }
 
 class EmergencyState extends State<Emergency> {
@@ -63,6 +71,13 @@ class EmergencyState extends State<Emergency> {
     );
   }
 
+  void _sendAlert() async {
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => const SendAlert()));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,6 +108,11 @@ class EmergencyState extends State<Emergency> {
                   'Dial your emergency number',
                   style: Theme.of(context).textTheme.headline6,
                 )),
+            const SizedBox(height: 30),
+            ElevatedButton(
+                onPressed: _sendAlert,
+                child: Text('Send Alert',
+                    style: Theme.of(context).textTheme.headline6))
           ]),
         ));
   }
@@ -381,5 +401,102 @@ class SetEmergencyNumberLoginState extends State<SetEmergencyNumberLogin>
                         ],
                       ),
                     ]))));
+  }
+}
+
+class SendAlertState extends State<SendAlert> {
+  late NotificationHandler n;
+  final TextEditingController _controller = TextEditingController();
+  String _message = '';
+
+  @override
+  void initState() {
+    super.initState();
+    initializePreference().whenComplete(() {
+      setState(() {});
+    });
+  }
+
+  Future<void> initializePreference() async {
+    n = NotificationHandler();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _backScreen() {
+    Navigator.pushAndRemoveUntil<void>(
+      context,
+      MaterialPageRoute<void>(
+          builder: (BuildContext context) => const Emergency()),
+      ModalRoute.withName('/'),
+    );
+  }
+
+  void _confirmAlert() async {
+    List<Map<String, dynamic>> f =
+        await DatabaseHelper.getFriendsFirebase(globals.user.username);
+    await DatabaseHelper.startStreamFirebase(globals.user.username);
+    List<String> usernames = [];
+    List<String> tokens = [];
+    for (Map<String, dynamic> m in f) {
+      usernames
+          .add(m['user1'] == globals.user.username ? m['user2'] : m['user1']);
+    }
+    for (String u in usernames) {
+      Map<String, dynamic> user =
+          await DatabaseHelper.getUserByUsernameFirebase(u);
+      tokens.add(user['tokenId']);
+      await DatabaseHelper.sendMessage(
+          globals.user.username, u, 'NEW ALERT:\n' + _message);
+    }
+    await n.sendNotification(
+        tokens, globals.user.username + " is in distress!", "New alert");
+
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text("Alert sent successfully"),
+    ));
+
+    Navigator.pushAndRemoveUntil<void>(
+      context,
+      MaterialPageRoute<void>(
+          builder: (BuildContext context) => const Emergency()),
+      ModalRoute.withName('/'),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+            centerTitle: true,
+            title: const Text("Alert"),
+            leading: BackButton(
+              color: Colors.white,
+              onPressed: _backScreen,
+            )),
+        body: Center(
+          child: Column(children: [
+            const Text('Add optional message to go with the alert:'),
+            TextFormField(
+              controller: _controller,
+              onChanged: (value) {
+                if (mounted) {
+                  setState(() {
+                    _message = _controller.text;
+                  });
+                }
+              },
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+                onPressed: _confirmAlert,
+                child: Text('Send Alert',
+                    style: Theme.of(context).textTheme.headline6)),
+          ]),
+        ));
   }
 }
