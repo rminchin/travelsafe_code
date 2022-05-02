@@ -1,4 +1,6 @@
 import 'change_user_details.dart';
+import 'delete_user.dart';
+
 import '../helpers/database_helper.dart';
 import '../helpers/globals.dart' as globals;
 import '../helpers/user.dart';
@@ -58,6 +60,14 @@ class SettingsState extends State<Settings> {
             builder: (BuildContext context) => const ChangeUserDetails()));
   }
 
+  void _deleteUser() async {
+    //await DatabaseHelper.deleteUserFirebase(globals.user.username);
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => const DeleteUser()));
+  }
+
   updateUserAutoLogin() async {
     if (_value) {
       _preferences?.setString('username', globals.user.username);
@@ -94,6 +104,11 @@ class SettingsState extends State<Settings> {
               'Change User Details',
               style: Theme.of(context).textTheme.headline6,
             )),
+        const SizedBox(height: 30),
+        ElevatedButton(
+            onPressed: _check ? null : _deleteUser,
+            child: Text('Delete Account',
+                style: Theme.of(context).textTheme.headline6)),
         const SizedBox(height: 30),
         ElevatedButton(
           onPressed: () => _submitLogout(),
