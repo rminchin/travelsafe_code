@@ -28,6 +28,23 @@ class OpenChatState extends State<OpenChat> {
   final loc.Location location = loc.Location();
   late NotificationHandler n;
   bool _opened = false;
+  bool _quick = false;
+  late Text _titleText = const Text("");
+  final List<String> _quickChats = [
+    "Getting ready to leave!",
+    "Leaving now!",
+    "On my way!",
+    "Nearly home!",
+    "Home safe!",
+    "Feeling unsafe",
+    "I need assurance",
+    "Feeling nervous",
+    "Please call me",
+    "Watch my location stream",
+    "Here for you whatever you need",
+    "Glad you got home safe!",
+    "Watching your stream now"
+  ];
 
   @override
   void initState() {
@@ -38,6 +55,9 @@ class OpenChatState extends State<OpenChat> {
   }
 
   Future<void> initializePreference() async {
+    setState(() {
+      _titleText = Text("Chatting with " + widget.user2.username);
+    });
     n = NotificationHandler();
     _conversationId = await DatabaseHelper.findConversation(
         globals.user.username, widget.user2.username);
@@ -85,6 +105,27 @@ class OpenChatState extends State<OpenChat> {
         await DatabaseHelper.getUserByUsernameFirebase(widget.user2.username);
     await n.sendNotification([u['tokenId']],
         globals.user.nickname + " has messaged you!", "New message");
+    if(_quick && mounted){
+      setState(() {
+        _quick = false;
+      });
+    }
+  }
+
+  void _quickChat() async {
+    _focusNode.unfocus();
+    String titleText;
+    if (mounted) {
+      setState(() {
+        if(_quick){
+          titleText = "Chatting with " + widget.user2.username;
+        } else{
+          titleText = "Quick chat";
+        }
+        _quick = !_quick;
+        _titleText = Text(titleText);
+      });
+    }
   }
 
   void _backScreen() {
@@ -106,6 +147,7 @@ class OpenChatState extends State<OpenChat> {
             Flexible(
               child: TextField(
                 controller: _textController,
+                enabled: !_quick,
                 onChanged: (text) {
                   if (mounted) {
                     setState(() {
@@ -119,6 +161,11 @@ class OpenChatState extends State<OpenChat> {
                 focusNode: _focusNode,
               ),
             ),
+            Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                child: IconButton(
+                    icon: const Icon(Icons.double_arrow_rounded),
+                    onPressed: _quickChat)),
             Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: IconButton(
@@ -146,6 +193,30 @@ class OpenChatState extends State<OpenChat> {
     } else {
       return _receivedMessage(_messages[indexToUse]);
     }
+  }
+
+  Widget _buildQuickChat(int index) {
+    if (index.isOdd){
+      return const Divider();
+    }
+
+    int indexToUse = index ~/ 2;
+    return ListTile(
+      title: Text(_quickChats[indexToUse]),
+      trailing: ElevatedButton.icon(
+            icon: const Icon(
+              Icons.send_rounded,
+              color: Colors.blueAccent,
+            ),
+            label: const Text('Send'),
+            onPressed: () {
+              _handleSubmitted(_quickChats[indexToUse]);
+            },
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+              foregroundColor: MaterialStateProperty.all<Color>(Colors.black),
+            )),
+      );
   }
 
   Widget _sentMessage(Map<String, dynamic> message) {
@@ -293,7 +364,7 @@ class OpenChatState extends State<OpenChat> {
               return Scaffold(
                 appBar: AppBar(
                   centerTitle: true,
-                  title: Text("Chatting with " + widget.user2.nickname),
+                  title: _titleText,
                   leading: BackButton(
                     color: Colors.white,
                     onPressed: _backScreen,
@@ -307,14 +378,20 @@ class OpenChatState extends State<OpenChat> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Flexible(
-                              child: _messages.isNotEmpty
+                              child: _quick
                                   ? ListView.builder(
                                       padding: const EdgeInsets.all(8.0),
-                                      reverse: true,
-                                      itemCount: _messages.length * 2,
+                                      itemCount: _quickChats.length * 2,
                                       itemBuilder: (context, index) =>
-                                          _buildMessage(index))
-                                  : const Text("No messages to show")),
+                                          _buildQuickChat(index))
+                                  : _messages.isNotEmpty
+                                      ? ListView.builder(
+                                          padding: const EdgeInsets.all(8.0),
+                                          reverse: true,
+                                          itemCount: _messages.length * 2,
+                                          itemBuilder: (context, index) =>
+                                              _buildMessage(index))
+                                      : const Text("No messages to show")),
                         ]),
                   ),
                   Align(
