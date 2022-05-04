@@ -6,7 +6,6 @@ import '../helpers/notification_handler.dart';
 import '../helpers/user.dart';
 
 import 'package:badges/badges.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -24,10 +23,6 @@ class ChatScreenState extends State<ChatScreen> {
   List<Map<String, dynamic>> _conversations = [];
   List<Map<String, dynamic>> _friends = [];
   List<int> _unreadIndexes = [];
-
-  List<Map<String, dynamic>> _requests = [];
-  List<Map<String, dynamic>> _streams = [];
-  List<Map<String, dynamic>> _chats = [];
 
   @override
   void initState() {
@@ -91,40 +86,6 @@ class ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void updateScreen() async {
-    _requests =
-        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
-    _streams =
-        await DatabaseHelper.getLiveStreamsFirebase(globals.user.username);
-    _chats = await DatabaseHelper.getAllUnreadFirebase(globals.user.username);
-
-    if (_requests.length > globals.requests.length) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("New friend request!"),
-      ));
-    }
-
-    if (_streams.length > globals.streams.length) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("New livestream started!"),
-      ));
-    }
-
-    if (_chats.length > globals.unread.length) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("New message received!"),
-      ));
-    }
-
-    if (mounted) {
-      setState(() {
-        globals.requests = _requests;
-        globals.streams = _streams;
-        globals.unread = _chats;
-      });
-    }
-  }
-
   Widget _buildItem(int index) {
     if (index.isOdd) {
       return const Divider();
@@ -167,16 +128,7 @@ class ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection('allNotifications')
-            .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          updateScreen();
-          return Scaffold(
+    return Scaffold(
               body: Stack(children: <Widget>[
             Positioned(
                 top: 0,
@@ -228,6 +180,5 @@ class ChatScreenState extends State<ChatScreen> {
               ],
             ),
           ]));
-        });
-  }
+        }
 }

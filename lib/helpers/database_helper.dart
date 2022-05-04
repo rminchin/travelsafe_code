@@ -297,8 +297,6 @@ class DatabaseHelper {
         .then((_) => print('Notification Deleted'))
         .catchError((error) => print('Deletion failed: $error'));
 
-    await sendNotification(username);
-
     var collection = FirebaseFirestore.instance.collection('streams');
     var querySnapshot = await collection.get();
     for (var doc in querySnapshot.docs) {

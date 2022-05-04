@@ -35,6 +35,8 @@ class HomePageState extends State<HomePage>
   List<Map<String, dynamic>> _streams = [];
   List<Map<String, dynamic>> _chats = [];
 
+  bool _streaming = false;
+
   @override
   void initState() {
     super.initState();
@@ -210,6 +212,38 @@ class HomePageState extends State<HomePage>
         globals.streams = _streams;
         globals.unread = _chats;
       });
+    }
+
+    _streaming =
+        await DatabaseHelper.checkStreamingFirebase(globals.user.username);
+    if (_streaming) {
+      List<Map<String, dynamic>> viewers =
+      await DatabaseHelper.getViewersFirebase(globals.user.username);
+      if (viewers.length != globals.viewers.length) {
+        if (viewers.length > globals.viewers.length) {
+          for (Map<String, dynamic> m in viewers) {
+            if (!globals.viewers.contains(m)) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(m['viewer'] + " has joined your stream!"),
+              ));
+            }
+          }
+        } else {
+          for (Map<String, dynamic> m in globals.viewers) {
+            if (!viewers.contains(m)) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(m['viewer'] + " has left your stream"),
+              ));
+            }
+          }
+        }
+        globals.viewers = viewers;
+      }
+      if (mounted) {
+        setState(() {
+          globals.viewers = viewers;
+        });
+      }
     }
   }
 

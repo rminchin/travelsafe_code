@@ -26,10 +26,6 @@ class MapGenerateState extends State<MapGenerate> {
   bool _streaming = false;
   late NotificationHandler n;
 
-  List<Map<String, dynamic>> _requests = [];
-  List<Map<String, dynamic>> _streams = [];
-  List<Map<String, dynamic>> _chats = [];
-
   @override
   void initState() {
     super.initState();
@@ -57,7 +53,6 @@ class MapGenerateState extends State<MapGenerate> {
       location.changeSettings(
           interval: 3000, accuracy: loc.LocationAccuracy.high);
       location.enableBackgroundMode(enable: true);
-      globals.context = context;
       n = NotificationHandler();
     });
   }
@@ -69,12 +64,11 @@ class MapGenerateState extends State<MapGenerate> {
       if (mounted) {
         setState(() {
           _streaming = true;
+          _locationSubscription = globals.locationSubscription;
         });
       }
     }
     _friends = await DatabaseHelper.getFriendsFirebase(globals.user.username);
-    globals.viewers =
-        await DatabaseHelper.getViewersFirebase(globals.user.username);
     bool check = await DatabaseHelper.findStreamFirebase();
     if (check) {
       String u = await DatabaseHelper.getUsernameStreamFirebase();
@@ -87,36 +81,32 @@ class MapGenerateState extends State<MapGenerate> {
     }
   }
 
-  void updateScreen() async {
-    _requests =
-        await DatabaseHelper.getRequestsReceivedFirebase(globals.user.username);
-    _streams =
-        await DatabaseHelper.getLiveStreamsFirebase(globals.user.username);
-    _chats = await DatabaseHelper.getAllUnreadFirebase(globals.user.username);
-
-    if (_requests.length > globals.requests.length) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("New friend request!"),
-      ));
+  void updateViewers() async {
+    List<Map<String, dynamic>> viewers =
+    await DatabaseHelper.getViewersFirebase(globals.user.username);
+    if(viewers.length != globals.viewers.length){
+      if (viewers.length > globals.viewers.length) {
+        for (Map<String, dynamic> m in viewers) {
+          if (!globals.viewers.contains(m)) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(m['viewer'] + " has joined your stream!"),
+            ));
+          }
+        }
+      } else{
+        for (Map<String, dynamic> m in globals.viewers) {
+          if (!viewers.contains(m)) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(m['viewer'] + " has left your stream"),
+            ));
+          }
+        }
+      }
     }
 
-    if (_streams.length > globals.streams.length) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("New livestream started!"),
-      ));
-    }
-
-    if (_chats.length > globals.unread.length) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("New message received!"),
-      ));
-    }
-
-    if (mounted) {
+    if(mounted){
       setState(() {
-        globals.requests = _requests;
-        globals.streams = _streams;
-        globals.unread = _chats;
+        globals.viewers = viewers;
       });
     }
   }
@@ -162,36 +152,6 @@ class MapGenerateState extends State<MapGenerate> {
         ],
       ),
     );
-  }
-
-  void updateViewers() async {
-    List<Map<String, dynamic>> viewers =
-        await DatabaseHelper.getViewersFirebase(globals.user.username);
-    if (viewers.length != globals.viewers.length) {
-      if (viewers.length > globals.viewers.length) {
-        for (Map<String, dynamic> m in viewers) {
-          if (!globals.viewers.contains(m)) {
-            ScaffoldMessenger.of(globals.context).showSnackBar(SnackBar(
-              content: Text(m['viewer'] + " has joined your stream!"),
-            ));
-          }
-        }
-      } else {
-        for (Map<String, dynamic> m in globals.viewers) {
-          if (!viewers.contains(m)) {
-            ScaffoldMessenger.of(globals.context).showSnackBar(SnackBar(
-              content: Text(m['viewer'] + " has left your stream"),
-            ));
-          }
-        }
-      }
-      globals.viewers = viewers;
-    }
-    if (mounted) {
-      setState(() {
-        globals.viewers = viewers;
-      });
-    }
   }
 
   Widget buildTiles(AsyncSnapshot snapshot) {
@@ -318,14 +278,12 @@ class MapGenerateState extends State<MapGenerate> {
     _locationSubscription?.cancel();
     globals.locationSubscription?.cancel();
     await DatabaseHelper.removeLocation(globals.user.username);
-    if (mounted) {
-      setState(() {
-        _locationSubscription = null;
-        _streaming = false;
-        globals.locationSubscription = null;
-        globals.viewers = [];
-      });
-    }
+    setState(() {
+      _locationSubscription = null;
+      _streaming = false;
+      globals.locationSubscription = null;
+      globals.viewers = [];
+    });
   }
 
   _requestPermission() async {
