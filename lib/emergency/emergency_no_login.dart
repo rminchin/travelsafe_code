@@ -1,4 +1,5 @@
 import '../main.dart';
+import '../emergency/play_alarm.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
@@ -60,6 +61,14 @@ class EmergencyNoLoginState extends State<EmergencyNoLogin> {
     }
   }
 
+  void _playAlarm() async {
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) =>
+                const PlayAlarm(mode: 'notLoggedIn')));
+  }
+
   void _backScreen() {
     Navigator.pushAndRemoveUntil<void>(
       context,
@@ -100,6 +109,11 @@ class EmergencyNoLoginState extends State<EmergencyNoLogin> {
                   'Dial your emergency number',
                   style: Theme.of(context).textTheme.headline6,
                 )),
+            const SizedBox(height: 30),
+            ElevatedButton(
+                onPressed: _playAlarm,
+                child: Text('Play Alarm',
+                    style: Theme.of(context).textTheme.headline6)),
           ]),
         ));
   }
@@ -140,7 +154,7 @@ class SetEmergencyNumberState extends State<SetEmergencyNumber>
       var exists = _preferences?.getString('number');
       if (exists != null) {
         _initialNumberHelpline = exists;
-        _controllerNumberHelpline.text = exists;
+        _controllerNumberHelpline.text = _initialNumberHelpline;
       }
     } else {
       _initialNumber = PhoneNumber(
@@ -181,7 +195,7 @@ class SetEmergencyNumberState extends State<SetEmergencyNumber>
   String returnMessage(String text) {
     bool check;
     try {
-      int num = int.parse(text);
+      int.parse(text);
       check = true;
     } catch (e) {
       check = false;
@@ -201,7 +215,7 @@ class SetEmergencyNumberState extends State<SetEmergencyNumber>
   bool isValid(String text) {
     bool check;
     try {
-      int num = int.parse(text);
+      int.parse(text);
       check = true;
     } catch (e) {
       check = false;

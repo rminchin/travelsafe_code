@@ -1,3 +1,4 @@
+import '../emergency/play_alarm.dart';
 import '../helpers/database_helper.dart';
 import '../helpers/globals.dart' as globals;
 import '../helpers/notification_handler.dart';
@@ -78,6 +79,14 @@ class EmergencyState extends State<Emergency> {
             builder: (BuildContext context) => const SendAlert()));
   }
 
+  void _playAlarm() async {
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) =>
+                const PlayAlarm(mode: 'loggedIn')));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -112,7 +121,12 @@ class EmergencyState extends State<Emergency> {
             ElevatedButton(
                 onPressed: _sendAlert,
                 child: Text('Send Alert',
-                    style: Theme.of(context).textTheme.headline6))
+                    style: Theme.of(context).textTheme.headline6)),
+            const SizedBox(height: 30),
+            ElevatedButton(
+                onPressed: _playAlarm,
+                child: Text('Play Alarm',
+                    style: Theme.of(context).textTheme.headline6)),
           ]),
         ));
   }
@@ -123,11 +137,10 @@ class SetEmergencyNumberLoginState extends State<SetEmergencyNumberLogin>
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final TextEditingController _controllerNumber = TextEditingController();
-  late PhoneNumber _initialNumber = PhoneNumber(isoCode: 'GB');
+  late final PhoneNumber _initialNumber = PhoneNumber(isoCode: 'GB');
 
   final TextEditingController _controllerNumberHelpline =
       TextEditingController();
-  String _initialNumberHelpline = 'e';
 
   late final TabController _controller = TabController(length: 2, vsync: this);
 
@@ -182,7 +195,7 @@ class SetEmergencyNumberLoginState extends State<SetEmergencyNumberLogin>
   String returnMessage(String text) {
     bool check;
     try {
-      int num = int.parse(text);
+      int.parse(text);
       check = true;
     } catch (e) {
       check = false;
@@ -202,7 +215,7 @@ class SetEmergencyNumberLoginState extends State<SetEmergencyNumberLogin>
   bool isValid(String text) {
     bool check;
     try {
-      int num = int.parse(text);
+      int.parse(text);
       check = true;
     } catch (e) {
       check = false;
