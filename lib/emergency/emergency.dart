@@ -100,7 +100,7 @@ class EmergencyState extends State<Emergency> {
         body: Center(
           child: Column(children: [
             const Text('Emergency declared!'),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: _setEmergency,
                 child: _saved
@@ -110,19 +110,19 @@ class EmergencyState extends State<Emergency> {
                         'Set your emergency number',
                         style: Theme.of(context).textTheme.headline6,
                       )),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: _saved ? _dialEmergency : null,
                 child: Text(
                   'Dial your emergency number',
                   style: Theme.of(context).textTheme.headline6,
                 )),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: _sendAlert,
                 child: Text('Send Alert',
                     style: Theme.of(context).textTheme.headline6)),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             ElevatedButton(
                 onPressed: _playAlarm,
                 child: Text('Play Alarm',
