@@ -129,56 +129,54 @@ class ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-              body: Stack(children: <Widget>[
-            Positioned(
-                top: 0,
-                right: 0,
-                child: IconButton(
-                    iconSize: 40,
-                    icon: const Icon(Icons.add_circle, color: Colors.green),
-                    onPressed: _createConversation)),
-            Flex(
-              direction: Axis.vertical,
-              children: [
-                Expanded(
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 50),
-                        TextFormField(
-                          controller: _controllerSearchbar,
-                          decoration: const InputDecoration(
-                            labelText: 'Filter:',
-                            prefixIcon: Icon(Icons.search),
-                          ),
-                          onChanged: (value) async {
-                            await findMatchingUsers();
-                          },
-                        ),
-                        Flexible(
-                          child: _results.isNotEmpty &&
-                                  _controllerSearchbar.text.isNotEmpty
-                              ? ListView.builder(
-                                  itemCount: _results.length * 2,
-                                  padding: const EdgeInsets.all(16),
-                                  itemBuilder: (context, index) =>
-                                      _buildItem(index))
-                              : _conversations.isNotEmpty
-                                  ? ListView.builder(
-                                      itemCount: _conversations.length * 2,
-                                      padding: const EdgeInsets.all(16),
-                                      itemBuilder: (context, index) =>
-                                          _buildItem(index))
-                                  : _controllerSearchbar.text.isEmpty
-                                      ? const Text('No conversations found')
-                                      : const Text(
-                                          'No matching conversations found'),
-                        )
-                      ]),
-                ),
-              ],
-            ),
-          ]));
-        }
+        body: Stack(children: <Widget>[
+      Positioned(
+          top: 0,
+          right: 0,
+          child: IconButton(
+              iconSize: 40,
+              icon: const Icon(Icons.add_circle, color: Colors.green),
+              onPressed: _createConversation)),
+      Flex(
+        direction: Axis.vertical,
+        children: [
+          Expanded(
+            child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 50),
+                  TextFormField(
+                    controller: _controllerSearchbar,
+                    decoration: const InputDecoration(
+                      labelText: 'Filter:',
+                      prefixIcon: Icon(Icons.search),
+                    ),
+                    onChanged: (value) async {
+                      await findMatchingUsers();
+                    },
+                  ),
+                  Flexible(
+                    child: _results.isNotEmpty &&
+                            _controllerSearchbar.text.isNotEmpty
+                        ? ListView.builder(
+                            itemCount: _results.length * 2,
+                            padding: const EdgeInsets.all(16),
+                            itemBuilder: (context, index) => _buildItem(index))
+                        : _conversations.isNotEmpty
+                            ? ListView.builder(
+                                itemCount: _conversations.length * 2,
+                                padding: const EdgeInsets.all(16),
+                                itemBuilder: (context, index) =>
+                                    _buildItem(index))
+                            : _controllerSearchbar.text.isEmpty
+                                ? const Text('No conversations found')
+                                : const Text('No matching conversations found'),
+                  )
+                ]),
+          ),
+        ],
+      ),
+    ]));
+  }
 }

@@ -1,3 +1,4 @@
+import 'advice_and_helplines.dart';
 import 'change_user_details.dart';
 import 'delete_user.dart';
 
@@ -68,6 +69,13 @@ class SettingsState extends State<Settings> {
             builder: (BuildContext context) => const DeleteUser()));
   }
 
+  void _advice() async {
+    Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(
+            builder: (BuildContext context) => const AdviceAndHelplines()));
+  }
+
   updateUserAutoLogin() async {
     if (_value) {
       _preferences?.setString('username', globals.user.username);
@@ -97,6 +105,13 @@ class SettingsState extends State<Settings> {
             },
           ),
         ),
+        const SizedBox(height: 30),
+        ElevatedButton(
+            onPressed: _advice,
+            child: Text(
+              'Advice and helplines',
+              style: Theme.of(context).textTheme.headline6,
+            )),
         const SizedBox(height: 30),
         ElevatedButton(
             onPressed: _check ? null : _changeUserDetails,

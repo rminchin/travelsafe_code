@@ -83,8 +83,8 @@ class MapGenerateState extends State<MapGenerate> {
 
   void updateViewers() async {
     List<Map<String, dynamic>> viewers =
-    await DatabaseHelper.getViewersFirebase(globals.user.username);
-    if(viewers.length != globals.viewers.length){
+        await DatabaseHelper.getViewersFirebase(globals.user.username);
+    if (viewers.length != globals.viewers.length) {
       if (viewers.length > globals.viewers.length) {
         for (Map<String, dynamic> m in viewers) {
           if (!globals.viewers.contains(m)) {
@@ -93,7 +93,7 @@ class MapGenerateState extends State<MapGenerate> {
             ));
           }
         }
-      } else{
+      } else {
         for (Map<String, dynamic> m in globals.viewers) {
           if (!viewers.contains(m)) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -104,7 +104,7 @@ class MapGenerateState extends State<MapGenerate> {
       }
     }
 
-    if(mounted){
+    if (mounted) {
       setState(() {
         globals.viewers = viewers;
       });

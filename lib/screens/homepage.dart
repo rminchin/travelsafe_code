@@ -218,7 +218,7 @@ class HomePageState extends State<HomePage>
         await DatabaseHelper.checkStreamingFirebase(globals.user.username);
     if (_streaming) {
       List<Map<String, dynamic>> viewers =
-      await DatabaseHelper.getViewersFirebase(globals.user.username);
+          await DatabaseHelper.getViewersFirebase(globals.user.username);
       if (viewers.length != globals.viewers.length) {
         if (viewers.length > globals.viewers.length) {
           for (Map<String, dynamic> m in viewers) {

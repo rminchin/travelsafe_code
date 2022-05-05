@@ -105,7 +105,7 @@ class OpenChatState extends State<OpenChat> {
         await DatabaseHelper.getUserByUsernameFirebase(widget.user2.username);
     await n.sendNotification([u['tokenId']],
         globals.user.nickname + " has messaged you!", "New message");
-    if(_quick && mounted){
+    if (_quick && mounted) {
       setState(() {
         _quick = false;
       });
@@ -117,9 +117,9 @@ class OpenChatState extends State<OpenChat> {
     String titleText;
     if (mounted) {
       setState(() {
-        if(_quick){
+        if (_quick) {
           titleText = "Chatting with " + widget.user2.username;
-        } else{
+        } else {
           titleText = "Quick chat";
         }
         _quick = !_quick;
@@ -196,7 +196,7 @@ class OpenChatState extends State<OpenChat> {
   }
 
   Widget _buildQuickChat(int index) {
-    if (index.isOdd){
+    if (index.isOdd) {
       return const Divider();
     }
 
@@ -204,19 +204,19 @@ class OpenChatState extends State<OpenChat> {
     return ListTile(
       title: Text(_quickChats[indexToUse]),
       trailing: ElevatedButton.icon(
-            icon: const Icon(
-              Icons.send_rounded,
-              color: Colors.blueAccent,
-            ),
-            label: const Text('Send'),
-            onPressed: () {
-              _handleSubmitted(_quickChats[indexToUse]);
-            },
-            style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
-              foregroundColor: MaterialStateProperty.all<Color>(Colors.black),
-            )),
-      );
+          icon: const Icon(
+            Icons.send_rounded,
+            color: Colors.blueAccent,
+          ),
+          label: const Text('Send'),
+          onPressed: () {
+            _handleSubmitted(_quickChats[indexToUse]);
+          },
+          style: ButtonStyle(
+            backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+            foregroundColor: MaterialStateProperty.all<Color>(Colors.black),
+          )),
+    );
   }
 
   Widget _sentMessage(Map<String, dynamic> message) {
